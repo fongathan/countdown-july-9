@@ -5,15 +5,11 @@ REPO="fongathan/countdown-july-9"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
+export PATH="$HOME/.local/bin:$PATH"
 GH="$(command -v gh)"
 if [ -z "$GH" ]; then
-  TMP_GH="/tmp/gh_2.92.0_macOS_arm64/bin/gh"
-  if [ -x "$TMP_GH" ]; then
-    GH="$TMP_GH"
-  else
-    echo "Install GitHub CLI: https://cli.github.com/ or run: brew install gh"
-    exit 1
-  fi
+  echo "Run ./github-login.sh first (installs gh without Homebrew)."
+  exit 1
 fi
 
 "$GH" auth status >/dev/null 2>&1 || {

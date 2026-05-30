@@ -29,6 +29,7 @@
       --card: rgba(255, 255, 255, 0.05);
       --card-border: rgba(201, 184, 232, 0.22);
       --glow: rgba(232, 197, 71, 0.4);
+      --warn: #fbbf24;
       --era-stripe: linear-gradient(
         90deg,
         var(--mint) 0%,
@@ -56,7 +57,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       padding: 2rem 1.25rem 3rem;
       overflow-x: hidden;
     }
@@ -751,8 +752,422 @@
       color: var(--text-muted);
     }
 
+    .feed-post {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto 2rem;
+      border-radius: 1rem;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: rgba(13, 10, 20, 0.55);
+      box-shadow: 0 20px 50px -24px rgba(0, 0, 0, 0.55);
+      text-align: left;
+    }
+
+    .feed-post-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .feed-avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--midnight);
+      background: linear-gradient(135deg, var(--gold-light), var(--lover-pink));
+      border: 2px solid rgba(232, 197, 71, 0.35);
+      flex-shrink: 0;
+    }
+
+    .feed-handle {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+
+    .feed-handle strong {
+      font-size: 0.92rem;
+      color: var(--lavender-soft);
+    }
+
+    .feed-handle span {
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .feed-post .carousel-row {
+      margin: 0;
+      max-width: none;
+      gap: 0;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .feed-post .carousel {
+      border-radius: 0;
+      border: none;
+      border-right: 1px solid var(--card-border);
+      box-shadow: none;
+    }
+
+    .feed-post .carousel:last-child { border-right: none; }
+
+    @media (max-width: 640px) {
+      .feed-post .carousel-row { grid-template-columns: 1fr; }
+      .feed-post .carousel { border-right: none; border-bottom: 1px solid var(--card-border); }
+      .feed-post .carousel:last-child { border-bottom: none; }
+    }
+
+    .feed-post-caption {
+      padding: 0.85rem 1rem 0.65rem;
+      border-top: 1px solid var(--card-border);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--lavender-soft);
+    }
+
+    .feed-post-caption strong { color: var(--gold-light); }
+
+    .thread-panel {
+      border-top: 1px solid var(--card-border);
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .thread-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .thread-header h2 {
+      margin: 0;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      font-style: italic;
+      color: var(--lavender-soft);
+    }
+
+    .thread-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .thread-status .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 8px var(--mint);
+    }
+
+    .thread-status.is-offline .live-dot {
+      background: var(--warn);
+      box-shadow: 0 0 8px var(--warn);
+    }
+
+    .thread-list {
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 0.35rem 0;
+    }
+
+    .thread-empty {
+      padding: 1.25rem 1rem;
+      text-align: center;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .thread-item {
+      display: flex;
+      gap: 0.7rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(201, 184, 232, 0.08);
+    }
+
+    .thread-item:last-child { border-bottom: none; }
+
+    .thread-item-avatar {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--midnight);
+      background: linear-gradient(135deg, var(--sky), var(--lavender));
+      flex-shrink: 0;
+    }
+
+    .thread-item-body { flex: 1; min-width: 0; }
+
+    .thread-item-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.45rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .thread-item-head strong {
+      font-size: 0.86rem;
+      color: var(--gold-light);
+    }
+
+    .thread-item-head time {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .thread-item-text {
+      margin: 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--lavender-soft);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .thread-item-text:empty { display: none; }
+
+    .thread-item-media {
+      margin-top: 0.55rem;
+      border-radius: 0.65rem;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #0a0812;
+      max-width: 280px;
+    }
+
+    .thread-item-media img {
+      display: block;
+      width: 100%;
+      max-height: 240px;
+      object-fit: cover;
+    }
+
+    .thread-item-delete {
+      margin-top: 0.35rem;
+      padding: 0;
+      border: none;
+      background: none;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .thread-item-delete:hover { color: var(--lover-pink); }
+
+    .thread-composer {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      padding: 0.85rem 1rem 1rem;
+      border-top: 1px solid var(--card-border);
+      background: rgba(13, 10, 20, 0.45);
+    }
+
+    .thread-composer-row {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+    }
+
+    .thread-composer input[type="text"],
+    .thread-composer textarea,
+    .thread-composer input[type="url"] {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 0.7rem;
+      border: 1px solid var(--card-border);
+      background: rgba(13, 10, 20, 0.88);
+      color: var(--lavender-soft);
+    }
+
+    .thread-composer textarea {
+      min-height: 2.75rem;
+      resize: vertical;
+    }
+
+    .thread-composer input:focus,
+    .thread-composer textarea:focus {
+      outline: none;
+      border-color: var(--lavender);
+    }
+
+    .thread-attach-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .thread-attach-row input[type="url"] { flex: 1 1 160px; }
+
+    .btn-upload {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      border: 1px dashed var(--card-border);
+      background: rgba(255, 158, 200, 0.08);
+      color: var(--lavender-soft);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-upload:hover {
+      border-color: var(--lover-pink);
+      background: rgba(255, 158, 200, 0.15);
+    }
+
+    .btn-upload input { display: none; }
+
+    .media-preview {
+      display: none;
+      position: relative;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #0a0812;
+      max-width: 280px;
+    }
+
+    .media-preview.is-visible { display: block; }
+
+    .media-preview img {
+      display: block;
+      width: 100%;
+      max-height: 180px;
+      object-fit: cover;
+    }
+
+    .media-preview-clear {
+      position: absolute;
+      top: 0.4rem;
+      right: 0.4rem;
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 50%;
+      border: 1px solid var(--card-border);
+      background: rgba(13, 10, 20, 0.9);
+      color: var(--lavender-soft);
+      cursor: pointer;
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+
+    .thread-setup-banner {
+      margin: 0 1rem 0.75rem;
+      padding: 0.75rem 0.85rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      background: rgba(251, 191, 36, 0.08);
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: #fde68a;
+    }
+
+    .thread-setup-banner[hidden] { display: none; }
+
+    .btn-fireworks {
+      color: var(--lavender-soft);
+      background: rgba(232, 197, 71, 0.12);
+      border: 1px solid rgba(232, 197, 71, 0.35);
+    }
+
+    .btn-fireworks.is-on {
+      color: var(--midnight);
+      background: linear-gradient(135deg, var(--gold-light), var(--coral));
+      box-shadow: 0 0 24px rgba(232, 197, 71, 0.45);
+    }
+
+    #fireworks-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+      display: none;
+    }
+
+    #fireworks-canvas.is-active { display: block; }
+
+    .fireworks-message {
+      position: fixed;
+      top: 38%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 55;
+      pointer-events: none;
+      text-align: center;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: clamp(1.35rem, 4.8vw, 2.5rem);
+      font-weight: 700;
+      font-style: italic;
+      line-height: 1.25;
+      color: var(--gold-light);
+      text-shadow:
+        0 0 32px rgba(232, 197, 71, 0.95),
+        0 0 64px rgba(255, 158, 200, 0.45),
+        0 4px 24px rgba(0, 0, 0, 0.85);
+      max-width: min(92vw, 640px);
+      padding: 0 1.25rem;
+      opacity: 0;
+      transition: opacity 0.45s ease;
+    }
+
+    .fireworks-message.is-visible {
+      opacity: 1;
+    }
+
+    .fireworks-controls {
+      position: fixed;
+      bottom: 1.75rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 60;
+      pointer-events: auto;
+    }
+
+    .fireworks-controls[hidden] { display: none; }
+
     @media print {
-      .bg, .stars, .sparkle-line, .vinyl, .actions, .toast, .music-panel, .carousel-row { display: none !important; }
+      .bg, .stars, .sparkle-line, .vinyl, .actions, .toast, .music-panel, .feed-post, #fireworks-canvas, .fireworks-message, .fireworks-controls { display: none !important; }
       body { background: #fff; color: #111; }
       h1 { color: #111; background: none; -webkit-text-fill-color: #111; }
     }
@@ -762,6 +1177,11 @@
   <div class="sparkle-line" aria-hidden="true"></div>
   <div class="bg" aria-hidden="true"></div>
   <div class="stars" id="stars" aria-hidden="true"></div>
+  <canvas id="fireworks-canvas" aria-hidden="true"></canvas>
+  <p class="fireworks-message" id="fireworks-message" aria-live="polite">Congrats! It's almost time, Boobie!!!</p>
+  <div class="fireworks-controls" id="fireworks-controls" hidden>
+    <button type="button" class="btn btn-fireworks is-on" id="btn-fireworks-off" aria-pressed="true">Turn off fireworks</button>
+  </div>
 
   <main>
     <div class="vinyl is-paused" id="vinyl" aria-hidden="true" title="Spinning like a record"></div>
@@ -813,24 +1233,74 @@
       <span class="meta-chip">Era length: <strong id="total-days">—</strong> days</span>
     </div>
 
-    <div class="carousel-row" aria-label="Photo carousels">
-      <div class="carousel carousel--jon" id="carousel-jon" aria-roledescription="carousel" aria-label="Jon and Liz">
-        <div class="carousel-viewport" id="carousel-jon-viewport"></div>
-        <p class="carousel-caption" id="carousel-jon-caption">
-          Jon &amp; Liz in 2026!
-          <span class="caption-sub">Our eras tour</span>
-        </p>
-        <div class="carousel-dots" id="carousel-jon-dots" role="tablist" aria-label="Jon and Liz photos"></div>
+    <section class="feed-post" aria-label="Photo feed and comments">
+      <div class="feed-post-header">
+        <div class="feed-avatar" aria-hidden="true">J&amp;L</div>
+        <div class="feed-handle">
+          <strong>jonandliz</strong>
+          <span>Countdown to July 9</span>
+        </div>
       </div>
-      <div class="carousel carousel--tribute" id="carousel-tribute" aria-roledescription="carousel" aria-label="Tribute performers">
-        <div class="carousel-viewport" id="carousel-tribute-viewport"></div>
-        <p class="carousel-caption" id="carousel-tribute-caption">
-          Eras-night tribute
-          <span class="caption-sub">Stock · tap photo for source</span>
-        </p>
-        <div class="carousel-dots" id="carousel-tribute-dots" role="tablist" aria-label="Tribute performer photos"></div>
+
+      <div class="carousel-row" aria-label="Photo carousels">
+        <div class="carousel carousel--jon" id="carousel-jon" aria-roledescription="carousel" aria-label="Jon and Liz">
+          <div class="carousel-viewport" id="carousel-jon-viewport"></div>
+          <p class="carousel-caption" id="carousel-jon-caption">
+            Jon &amp; Liz in 2026!
+            <span class="caption-sub">Our eras tour</span>
+          </p>
+          <div class="carousel-dots" id="carousel-jon-dots" role="tablist" aria-label="Jon and Liz photos"></div>
+        </div>
+        <div class="carousel carousel--tribute" id="carousel-tribute" aria-roledescription="carousel" aria-label="Tribute performers">
+          <div class="carousel-viewport" id="carousel-tribute-viewport"></div>
+          <p class="carousel-caption" id="carousel-tribute-caption">
+            Eras-night tribute
+            <span class="caption-sub">Stock · tap photo for source</span>
+          </p>
+          <div class="carousel-dots" id="carousel-tribute-dots" role="tablist" aria-label="Tribute performer photos"></div>
+        </div>
       </div>
-    </div>
+
+      <p class="feed-post-caption"><strong>jonandliz</strong> Are you ready for it? ✦ Photos keep cycling — drop your reactions below.</p>
+
+      <div class="thread-panel" id="thread-panel">
+        <div class="thread-header">
+          <h2>Comments</h2>
+          <span class="thread-status" id="thread-status">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span id="thread-status-text">Connecting…</span>
+          </span>
+        </div>
+
+        <p class="thread-setup-banner" id="thread-setup-banner" hidden>
+          Live comments need Firebase. Edit <code>firebase-config.js</code> in this folder with your project keys, then reload.
+        </p>
+
+        <div class="thread-list" id="thread-list" aria-live="polite"></div>
+
+        <form class="thread-composer" id="thread-form">
+          <div class="thread-composer-row">
+            <div class="thread-item-avatar" id="composer-avatar" aria-hidden="true">?</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0.55rem">
+              <input type="text" id="thread-author" maxlength="40" placeholder="Your name" required autocomplete="name" />
+              <textarea id="thread-text" maxlength="500" placeholder="Add a comment…"></textarea>
+            </div>
+          </div>
+          <div class="thread-attach-row">
+            <label class="btn-upload">
+              Photo / GIF
+              <input type="file" id="thread-file" accept="image/*,.gif" />
+            </label>
+            <input type="url" id="thread-url" placeholder="Or paste image / GIF link" inputmode="url" />
+          </div>
+          <div class="media-preview" id="media-preview">
+            <button type="button" class="media-preview-clear" id="media-preview-clear" aria-label="Remove attachment">×</button>
+            <img id="media-preview-img" alt="Attachment preview" />
+          </div>
+          <button type="submit" class="btn btn-primary" id="thread-submit" style="align-self:flex-start">Post</button>
+        </form>
+      </div>
+    </section>
 
     <section class="music-panel" aria-label="Soundtrack">
       <div class="music-header">
@@ -844,16 +1314,7 @@
       <div class="music-controls">
         <div class="music-select-wrap">
           <label for="music-track-select">Choose a track</label>
-          <select id="music-track-select" class="music-select" aria-label="Soundtrack track">
-            <option value="0">Slow Pop — Arulo</option>
-            <option value="1">Loving You Is Easy — Michael Ramir C.</option>
-            <option value="2">Time Out — Ahjay Stelino</option>
-            <option value="3">Home — Eugenio Mininni</option>
-            <option value="4">Angel on Earth — Michael Ramir C.</option>
-            <option value="5">Relax Beat — Arulo</option>
-            <option value="6">Wedding 01 — Francisco Alvear</option>
-            <option value="7">All Our Life — Eugenio Mininni</option>
-          </select>
+          <select id="music-track-select" class="music-select" aria-label="Soundtrack track"></select>
         </div>
         <div class="volume-wrap">
           <label for="music-volume" aria-hidden="true">♪</label>
@@ -861,9 +1322,9 @@
         </div>
       </div>
       <p class="music-credit">
-        Royalty-free dream pop (Taylor Swift–<em>style</em>, not her music).
-        <a href="https://mixkit.co/free-stock-music/dream-pop/" target="_blank" rel="noopener noreferrer">Mixkit License</a>
-        — free for personal &amp; commercial use.
+        Royalty-free dream pop &amp; uplifting pop (Taylor Swift–<em>style</em>, not her music).
+        Fireworks play <em>Raising Me Higher</em> — a legal Firework-style anthem via
+        <a href="https://mixkit.co/license/#musicFree" target="_blank" rel="noopener noreferrer">Mixkit License</a>.
       </p>
     </section>
 
@@ -872,11 +1333,17 @@
     <div class="actions">
       <button type="button" class="btn btn-primary" id="btn-share">Share with the squad</button>
       <button type="button" class="btn btn-ghost" id="btn-copy">Copy the magic</button>
+      <button type="button" class="btn btn-fireworks" id="btn-fireworks" aria-pressed="false">Fireworks</button>
     </div>
   </main>
 
   <footer>Fan-made countdown · <em>13</em> stars · Music via <a href="https://mixkit.co/">Mixkit</a> · Not affiliated with any artist</footer>
   <div class="toast" id="toast" role="status"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
   <script>
     (function () {
@@ -1211,8 +1678,27 @@
         { title: "Angel on Earth", artist: "Michael Ramir C. · Mixkit", local: "mixkit-865.mp3", remote: "https://assets.mixkit.co/music/865/865.mp3" },
         { title: "Relax Beat", artist: "Arulo · Mixkit", local: "mixkit-292.mp3", remote: "https://assets.mixkit.co/music/292/292.mp3" },
         { title: "Wedding 01", artist: "Francisco Alvear · Mixkit", local: "mixkit-657.mp3", remote: "https://assets.mixkit.co/music/657/657.mp3" },
-        { title: "All Our Life", artist: "Eugenio Mininni · Mixkit", local: "mixkit-582.mp3", remote: "https://assets.mixkit.co/music/582/582.mp3" }
+        { title: "All Our Life", artist: "Eugenio Mininni · Mixkit", local: "mixkit-582.mp3", remote: "https://assets.mixkit.co/music/582/582.mp3" },
+        { title: "Driving Ambition", artist: "Ahjay Stelino · Mixkit", local: "mixkit-32.mp3", remote: "https://assets.mixkit.co/music/32/32.mp3" },
+        { title: "Dreaming Big", artist: "Ahjay Stelino · Mixkit", local: "mixkit-31.mp3", remote: "https://assets.mixkit.co/music/31/31.mp3" },
+        { title: "Tears of Joy", artist: "Michael Ramir C. · Mixkit", local: "mixkit-839.mp3", remote: "https://assets.mixkit.co/music/839/839.mp3" },
+        { title: "Happy Times", artist: "Alejandro Magaña · Mixkit", local: "mixkit-158.mp3", remote: "https://assets.mixkit.co/music/158/158.mp3" },
+        { title: "I Believe in Us", artist: "Michael Ramir C. · Mixkit", local: "mixkit-1030.mp3", remote: "https://assets.mixkit.co/music/1030/1030.mp3" },
+        { title: "Just Keep Walking", artist: "Michael Ramir C. · Mixkit", local: "mixkit-963.mp3", remote: "https://assets.mixkit.co/music/963/963.mp3" },
+        { title: "Proud of You", artist: "Michael Ramir C. · Mixkit", local: "mixkit-1117.mp3", remote: "https://assets.mixkit.co/music/1117/1117.mp3" },
+        { title: "Follow Me Home", artist: "Arulo · Mixkit", local: "mixkit-350.mp3", remote: "https://assets.mixkit.co/music/350/350.mp3" },
+        { title: "Feeling Happy", artist: "Ahjay Stelino · Mixkit", local: "mixkit-5.mp3", remote: "https://assets.mixkit.co/music/5/5.mp3" },
+        { title: "Island Beat", artist: "Arulo · Mixkit", local: "mixkit-250.mp3", remote: "https://assets.mixkit.co/music/250/250.mp3" },
+        { title: "It's Love", artist: "Michael Ramir C. · Mixkit", local: "mixkit-834.mp3", remote: "https://assets.mixkit.co/music/834/834.mp3" },
+        { title: "Reaching Out", artist: "Michael Ramir C. · Mixkit", local: "mixkit-1154.mp3", remote: "https://assets.mixkit.co/music/1154/1154.mp3" }
       ];
+
+      var FIREWORKS_TRACK = {
+        title: "Raising Me Higher",
+        artist: "Ahjay Stelino · Mixkit",
+        local: "mixkit-raising-me-higher.mp3",
+        remote: "https://assets.mixkit.co/music/34/34.mp3"
+      };
 
       var audio = document.getElementById("soundtrack");
       var vinyl = document.getElementById("vinyl");
@@ -1222,29 +1708,45 @@
       var volumeEl = document.getElementById("music-volume");
       var trackSelect = document.getElementById("music-track-select");
       var currentTrack = 0;
+      var savedMusicState = null;
+      var fireworksMusicOn = false;
 
       audio.volume = 0.4;
 
-      function setTrackSource(index) {
-        var t = TRACKS[index];
+      if (trackSelect) {
+        TRACKS.forEach(function (t, i) {
+          var opt = document.createElement("option");
+          opt.value = String(i);
+          opt.textContent = t.title + " — " + t.artist.replace(" · Mixkit", "");
+          trackSelect.appendChild(opt);
+        });
+      }
+
+      function setTrackSource(track) {
         audio.onerror = function () {
           audio.onerror = null;
-          audio.src = t.remote;
+          audio.src = track.remote;
           audio.load();
         };
-        audio.src = t.local;
+        audio.src = track.local;
+      }
+
+      function setTrackSourceByIndex(index) {
+        setTrackSource(TRACKS[index]);
       }
 
       function loadTrack(index, autoplay) {
+        if (fireworksMusicOn) return;
         currentTrack = index;
         var t = TRACKS[index];
         trackNameEl.textContent = t.title;
         artistNameEl.textContent = t.artist;
+        audio.loop = false;
         if (trackSelect) {
           trackSelect.value = String(index);
         }
         var wasPlaying = !audio.paused;
-        setTrackSource(index);
+        setTrackSourceByIndex(index);
         audio.load();
         if (autoplay || wasPlaying) {
           audio.play().then(syncPlayUi).catch(function () {
@@ -1252,6 +1754,52 @@
           });
         }
       }
+
+      function playFireworksMusic() {
+        savedMusicState = {
+          index: currentTrack,
+          wasPlaying: !audio.paused
+        };
+        fireworksMusicOn = true;
+        audio.loop = true;
+        trackNameEl.textContent = FIREWORKS_TRACK.title;
+        artistNameEl.textContent = FIREWORKS_TRACK.artist + " · Firework-style anthem";
+        setTrackSource(FIREWORKS_TRACK);
+        audio.load();
+        audio.play().then(syncPlayUi).catch(function () {
+          showToast("Tap play if the fireworks anthem doesn't start");
+          syncPlayUi();
+        });
+      }
+
+      function stopFireworksMusic() {
+        if (!fireworksMusicOn) return;
+        fireworksMusicOn = false;
+        audio.loop = false;
+        var state = savedMusicState;
+        savedMusicState = null;
+        if (state) {
+          currentTrack = state.index;
+          var t = TRACKS[currentTrack];
+          trackNameEl.textContent = t.title;
+          artistNameEl.textContent = t.artist;
+          if (trackSelect) trackSelect.value = String(currentTrack);
+          setTrackSourceByIndex(currentTrack);
+          audio.load();
+          if (state.wasPlaying) {
+            audio.play().then(syncPlayUi).catch(syncPlayUi);
+          } else {
+            audio.pause();
+            syncPlayUi();
+          }
+        } else {
+          audio.pause();
+          syncPlayUi();
+        }
+      }
+
+      window.playFireworksMusic = playFireworksMusic;
+      window.stopFireworksMusic = stopFireworksMusic;
 
       function syncPlayUi() {
         var playing = !audio.paused;
@@ -1262,7 +1810,7 @@
         vinyl.classList.toggle("is-playing", playing);
       }
 
-      setTrackSource(0);
+      setTrackSourceByIndex(0);
       audio.load();
 
       btnPlay.addEventListener("click", function () {
@@ -1282,6 +1830,7 @@
 
       if (trackSelect) {
         trackSelect.addEventListener("change", function () {
+          if (fireworksMusicOn) return;
           loadTrack(Number(trackSelect.value), false);
           if (!audio.paused) {
             audio.play().then(syncPlayUi);
@@ -1292,6 +1841,7 @@
       audio.addEventListener("play", syncPlayUi);
       audio.addEventListener("pause", syncPlayUi);
       audio.addEventListener("ended", function () {
+        if (fireworksMusicOn) return;
         loadTrack((currentTrack + 1) % TRACKS.length, true);
       });
 
@@ -1326,6 +1876,629 @@
           showToast(text);
         }
       });
+
+      (function initLiveThread() {
+        var CLIENT_KEY = "july9-thread-client";
+        var MAX_FILE_BYTES = 1572864;
+        var MAX_WIDTH = 900;
+
+        var form = document.getElementById("thread-form");
+        var authorEl = document.getElementById("thread-author");
+        var textEl = document.getElementById("thread-text");
+        var fileEl = document.getElementById("thread-file");
+        var urlEl = document.getElementById("thread-url");
+        var previewWrap = document.getElementById("media-preview");
+        var previewImg = document.getElementById("media-preview-img");
+        var previewClear = document.getElementById("media-preview-clear");
+        var listEl = document.getElementById("thread-list");
+        var statusEl = document.getElementById("thread-status");
+        var statusTextEl = document.getElementById("thread-status-text");
+        var setupBanner = document.getElementById("thread-setup-banner");
+        var composerAvatar = document.getElementById("composer-avatar");
+        var submitBtn = document.getElementById("thread-submit");
+
+        var pendingMedia = null;
+        var pendingBlob = null;
+        var db = null;
+        var storage = null;
+        var liveReady = false;
+
+        var clientId = localStorage.getItem(CLIENT_KEY);
+        if (!clientId) {
+          clientId = "c-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
+          localStorage.setItem(CLIENT_KEY, clientId);
+        }
+
+        var savedName = localStorage.getItem("july9-thread-name");
+        if (savedName) authorEl.value = savedName;
+
+        authorEl.addEventListener("input", function () {
+          var name = authorEl.value.trim();
+          composerAvatar.textContent = name ? name.charAt(0).toUpperCase() : "?";
+          if (name) localStorage.setItem("july9-thread-name", name);
+        });
+        composerAvatar.textContent = authorEl.value.trim()
+          ? authorEl.value.trim().charAt(0).toUpperCase()
+          : "?";
+
+        var ALLOWED_HOSTS = [
+          "media.giphy.com", "i.giphy.com", "giphy.com",
+          "media.tenor.com", "c.tenor.com", "tenor.com",
+          "i.imgur.com", "imgur.com",
+          "media.discordapp.net", "cdn.discordapp.com",
+          "firebasestorage.googleapis.com"
+        ];
+
+        function escapeHtml(str) {
+          return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
+        function isAllowedMediaUrl(url) {
+          try {
+            var parsed = new URL(url);
+            if (parsed.protocol !== "https:") return false;
+            var host = parsed.hostname.toLowerCase();
+            for (var i = 0; i < ALLOWED_HOSTS.length; i++) {
+              var allowed = ALLOWED_HOSTS[i];
+              if (host === allowed || host.endsWith("." + allowed)) return true;
+            }
+            return /\.(gif|jpe?g|png|webp|avif)(\?.*)?$/i.test(parsed.pathname);
+          } catch (e) {
+            return false;
+          }
+        }
+
+        function normalizeGifUrl(url) {
+          try {
+            var parsed = new URL(url);
+            var host = parsed.hostname.toLowerCase();
+            if (host === "giphy.com" || host.endsWith(".giphy.com")) {
+              var parts = parsed.pathname.split("/").filter(Boolean);
+              var gifIdx = parts.indexOf("gifs");
+              if (gifIdx !== -1 && parts[gifIdx + 1]) {
+                var id = parts[gifIdx + 1].split("-").pop();
+                if (id) return "https://media.giphy.com/media/" + id + "/giphy.gif";
+              }
+            }
+          } catch (e) {
+            return url;
+          }
+          return url;
+        }
+
+        function readFileAsDataUrl(file) {
+          return new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+            reader.onload = function () { resolve(String(reader.result)); };
+            reader.onerror = function () { reject(new Error("Could not read file")); };
+            reader.readAsDataURL(file);
+          });
+        }
+
+        function dataUrlToBlob(dataUrl) {
+          var parts = dataUrl.split(",");
+          var mime = parts[0].match(/:(.*?);/)[1];
+          var binary = atob(parts[1]);
+          var len = binary.length;
+          var bytes = new Uint8Array(len);
+          for (var i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+          return new Blob([bytes], { type: mime });
+        }
+
+        function compressImage(file) {
+          if (file.type === "image/gif") {
+            if (file.size > MAX_FILE_BYTES) {
+              return Promise.reject(new Error("GIF must be under 1.5 MB"));
+            }
+            return readFileAsDataUrl(file).then(function (dataUrl) {
+              return { dataUrl: dataUrl, blob: file, kind: "gif" };
+            });
+          }
+          if (!/^image\//.test(file.type)) {
+            return Promise.reject(new Error("Please choose an image or GIF"));
+          }
+          if (file.size > MAX_FILE_BYTES * 2) {
+            return Promise.reject(new Error("Image must be under 3 MB"));
+          }
+          return readFileAsDataUrl(file).then(function (dataUrl) {
+            return new Promise(function (resolve, reject) {
+              var img = new Image();
+              img.onload = function () {
+                var w = img.width;
+                var h = img.height;
+                if (w > MAX_WIDTH) {
+                  h = Math.round(h * (MAX_WIDTH / w));
+                  w = MAX_WIDTH;
+                }
+                var canvas = document.createElement("canvas");
+                canvas.width = w;
+                canvas.height = h;
+                var ctx = canvas.getContext("2d");
+                if (!ctx) {
+                  resolve({ dataUrl: dataUrl, blob: file, kind: "photo" });
+                  return;
+                }
+                ctx.drawImage(img, 0, 0, w, h);
+                var out = canvas.toDataURL("image/jpeg", 0.82);
+                resolve({ dataUrl: out, blob: dataUrlToBlob(out), kind: "photo" });
+              };
+              img.onerror = function () { reject(new Error("Invalid image file")); };
+              img.src = dataUrl;
+            });
+          });
+        }
+
+        function setPreview(media) {
+          pendingMedia = media;
+          pendingBlob = media && media.blob ? media.blob : null;
+          if (!media) {
+            previewWrap.classList.remove("is-visible");
+            previewImg.removeAttribute("src");
+            return;
+          }
+          previewImg.src = media.type === "url" ? media.src : media.dataUrl;
+          previewWrap.classList.add("is-visible");
+        }
+
+        function clearPreview() {
+          pendingMedia = null;
+          pendingBlob = null;
+          fileEl.value = "";
+          urlEl.value = "";
+          previewWrap.classList.remove("is-visible");
+          previewImg.removeAttribute("src");
+        }
+
+        function relativeTime(date) {
+          var sec = Math.floor((Date.now() - date.getTime()) / 1000);
+          if (sec < 60) return "just now";
+          var min = Math.floor(sec / 60);
+          if (min < 60) return min + "m";
+          var hr = Math.floor(min / 60);
+          if (hr < 24) return hr + "h";
+          var day = Math.floor(hr / 24);
+          if (day < 7) return day + "d";
+          return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        }
+
+        function avatarLetter(name) {
+          return name ? String(name).charAt(0).toUpperCase() : "?";
+        }
+
+        function setThreadStatus(online, text) {
+          statusEl.classList.toggle("is-offline", !online);
+          statusTextEl.textContent = text;
+        }
+
+        function scrollThreadToBottom() {
+          listEl.scrollTop = listEl.scrollHeight;
+        }
+
+        function renderComments(docs) {
+          listEl.innerHTML = "";
+          if (!docs.length) {
+            listEl.innerHTML = '<p class="thread-empty">No comments yet — start the thread ✦</p>';
+            return;
+          }
+
+          docs.forEach(function (item) {
+            var card = document.createElement("article");
+            card.className = "thread-item";
+            card.setAttribute("data-id", item.id);
+
+            var av = document.createElement("div");
+            av.className = "thread-item-avatar";
+            av.textContent = avatarLetter(item.author);
+            av.setAttribute("aria-hidden", "true");
+            card.appendChild(av);
+
+            var body = document.createElement("div");
+            body.className = "thread-item-body";
+
+            var head = document.createElement("div");
+            head.className = "thread-item-head";
+            var when = item.createdAt && item.createdAt.toDate
+              ? relativeTime(item.createdAt.toDate())
+              : "";
+            head.innerHTML =
+              "<strong>" + escapeHtml(item.author) + "</strong>" +
+              (when ? "<time>" + escapeHtml(when) + "</time>" : "");
+            body.appendChild(head);
+
+            if (item.text) {
+              var txt = document.createElement("p");
+              txt.className = "thread-item-text";
+              txt.textContent = item.text;
+              body.appendChild(txt);
+            }
+
+            if (item.mediaUrl) {
+              var mediaWrap = document.createElement("div");
+              mediaWrap.className = "thread-item-media";
+              var img = document.createElement("img");
+              img.alt = item.mediaKind === "gif" ? "GIF" : "Photo";
+              img.loading = "lazy";
+              img.src = item.mediaUrl;
+              mediaWrap.appendChild(img);
+              body.appendChild(mediaWrap);
+            }
+
+            if (item.clientId === clientId && liveReady) {
+              var del = document.createElement("button");
+              del.type = "button";
+              del.className = "thread-item-delete";
+              del.textContent = "Delete";
+              del.addEventListener("click", function () {
+                db.collection("july9-comments").doc(item.id).delete().then(function () {
+                  showToast("Comment deleted");
+                }).catch(function () {
+                  showToast("Could not delete comment");
+                });
+              });
+              body.appendChild(del);
+            }
+
+            card.appendChild(body);
+            listEl.appendChild(card);
+          });
+
+          scrollThreadToBottom();
+        }
+
+        function initFirebase() {
+          var cfg = window.COUNTDOWN_FIREBASE || {};
+          if (!cfg.projectId) {
+            setupBanner.hidden = false;
+            submitBtn.disabled = true;
+            setThreadStatus(false, "Offline — add Firebase config");
+            listEl.innerHTML = '<p class="thread-empty">Connect Firebase in firebase-config.js for live shared comments.</p>';
+            return;
+          }
+
+          try {
+            if (!firebase.apps.length) {
+              firebase.initializeApp(cfg);
+            }
+            db = firebase.firestore();
+            storage = firebase.storage();
+            liveReady = true;
+            setupBanner.hidden = true;
+            submitBtn.disabled = false;
+            setThreadStatus(true, "Live");
+
+            db.collection("july9-comments")
+              .orderBy("createdAt", "asc")
+              .onSnapshot(function (snap) {
+                var items = [];
+                snap.forEach(function (doc) {
+                  var data = doc.data();
+                  items.push({
+                    id: doc.id,
+                    author: data.author,
+                    text: data.text || "",
+                    mediaUrl: data.mediaUrl || "",
+                    mediaKind: data.mediaKind || "",
+                    clientId: data.clientId,
+                    createdAt: data.createdAt
+                  });
+                });
+                setThreadStatus(true, items.length + " comment" + (items.length === 1 ? "" : "s"));
+                renderComments(items);
+              }, function () {
+                liveReady = false;
+                setupBanner.hidden = false;
+                submitBtn.disabled = true;
+                setThreadStatus(false, "Connection error");
+              });
+          } catch (e) {
+            setupBanner.hidden = false;
+            submitBtn.disabled = true;
+            setThreadStatus(false, "Firebase error");
+          }
+        }
+
+        function uploadMedia(blob, kind) {
+          var ext = kind === "gif" ? "gif" : "jpg";
+          var path = "july9-comments/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
+          var ref = storage.ref(path);
+          return ref.put(blob, { contentType: blob.type || "image/jpeg" }).then(function () {
+            return ref.getDownloadURL();
+          });
+        }
+
+        previewClear.addEventListener("click", clearPreview);
+
+        fileEl.addEventListener("change", function () {
+          var file = fileEl.files && fileEl.files[0];
+          if (!file) return;
+          urlEl.value = "";
+          compressImage(file).then(function (result) {
+            setPreview({
+              type: "upload",
+              dataUrl: result.dataUrl,
+              blob: result.blob,
+              kind: result.kind
+            });
+          }).catch(function (err) {
+            fileEl.value = "";
+            showToast(err.message || "Could not attach file");
+          });
+        });
+
+        urlEl.addEventListener("change", function () {
+          var value = urlEl.value.trim();
+          if (!value) {
+            if (pendingMedia && pendingMedia.type === "url") clearPreview();
+            return;
+          }
+          if (!isAllowedMediaUrl(value)) {
+            showToast("Use an https image/GIF link");
+            urlEl.value = "";
+            return;
+          }
+          fileEl.value = "";
+          var normalized = normalizeGifUrl(value);
+          setPreview({
+            type: "url",
+            src: normalized,
+            kind: /\.gif(\?|$)/i.test(normalized) ? "gif" : "photo"
+          });
+        });
+
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          if (!liveReady || !db) {
+            showToast("Live comments are not connected yet");
+            return;
+          }
+
+          var author = authorEl.value.trim();
+          var text = textEl.value.trim();
+          if (!author) {
+            showToast("Add your name first");
+            authorEl.focus();
+            return;
+          }
+          if (!text && !pendingMedia) {
+            showToast("Write a comment or attach media");
+            textEl.focus();
+            return;
+          }
+
+          submitBtn.disabled = true;
+
+          var mediaPromise = Promise.resolve({ url: "", kind: "" });
+          if (pendingMedia) {
+            if (pendingMedia.type === "url") {
+              mediaPromise = Promise.resolve({
+                url: pendingMedia.src,
+                kind: pendingMedia.kind
+              });
+            } else if (pendingBlob) {
+              mediaPromise = uploadMedia(pendingBlob, pendingMedia.kind).then(function (url) {
+                return { url: url, kind: pendingMedia.kind };
+              });
+            }
+          }
+
+          mediaPromise.then(function (media) {
+            return db.collection("july9-comments").add({
+              author: author,
+              text: text,
+              mediaUrl: media.url || "",
+              mediaKind: media.kind || "",
+              clientId: clientId,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }).then(function () {
+            textEl.value = "";
+            clearPreview();
+            showToast("✦ Posted");
+          }).catch(function () {
+            showToast("Could not post — check Firebase rules");
+          }).finally(function () {
+            submitBtn.disabled = false;
+          });
+        });
+
+        initFirebase();
+      })();
+
+      (function initFireworks() {
+        var canvas = document.getElementById("fireworks-canvas");
+        var btn = document.getElementById("btn-fireworks");
+        var btnOff = document.getElementById("btn-fireworks-off");
+        var controls = document.getElementById("fireworks-controls");
+        var message = document.getElementById("fireworks-message");
+        if (!canvas || !btn) return;
+
+        var ctx = canvas.getContext("2d");
+        var active = false;
+        var animId = null;
+        var launchTimer = null;
+        var ringTimer = null;
+        var particles = [];
+        var rockets = [];
+        var colors = ["#e8c547", "#ff9ec8", "#9ee4c8", "#8ec8ff", "#c9b8e8", "#ff9a7a", "#fff4c4"];
+
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+
+        function rand(min, max) {
+          return min + Math.random() * (max - min);
+        }
+
+        function skyCenter() {
+          return {
+            x: canvas.width / 2,
+            y: canvas.height * 0.38
+          };
+        }
+
+        function ringPoint() {
+          var c = skyCenter();
+          var angle = rand(0, Math.PI * 2);
+          var r = rand(
+            Math.min(canvas.width, canvas.height) * 0.16,
+            Math.min(canvas.width, canvas.height) * 0.34
+          );
+          return {
+            x: c.x + Math.cos(angle) * r,
+            y: c.y + Math.sin(angle) * r * 0.48
+          };
+        }
+
+        function launchRocket() {
+          var target = ringPoint();
+          var startX = rand(canvas.width * 0.12, canvas.width * 0.88);
+          var dx = target.x - startX;
+          var dy = target.y - canvas.height;
+          var speed = rand(11, 14);
+
+          rockets.push({
+            x: startX,
+            y: canvas.height,
+            targetX: target.x,
+            targetY: target.y,
+            vx: dx * 0.014 + rand(-0.8, 0.8),
+            vy: -speed,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            trail: []
+          });
+        }
+
+        function launchRingBurst() {
+          var pt = ringPoint();
+          explode(pt.x, pt.y, colors[Math.floor(Math.random() * colors.length)]);
+        }
+
+        function explode(x, y, color) {
+          var count = 36 + Math.floor(Math.random() * 24);
+          for (var i = 0; i < count; i++) {
+            var angle = (Math.PI * 2 * i) / count + rand(-0.08, 0.08);
+            var speed = rand(2, 7);
+            particles.push({
+              x: x,
+              y: y,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              life: rand(50, 90),
+              maxLife: 90,
+              color: color,
+              size: rand(1.5, 3.2)
+            });
+          }
+        }
+
+        function tickFireworks() {
+          ctx.fillStyle = "rgba(13, 10, 20, 0.18)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          for (var r = rockets.length - 1; r >= 0; r--) {
+            var rocket = rockets[r];
+            rocket.trail.push({ x: rocket.x, y: rocket.y });
+            if (rocket.trail.length > 8) rocket.trail.shift();
+            rocket.x += rocket.vx;
+            rocket.y += rocket.vy;
+            rocket.vy += 0.16;
+            rocket.vx += (rocket.targetX - rocket.x) * 0.002;
+
+            ctx.beginPath();
+            ctx.strokeStyle = rocket.color;
+            ctx.lineWidth = 2;
+            for (var t = 0; t < rocket.trail.length; t++) {
+              var pt = rocket.trail[t];
+              if (t === 0) ctx.moveTo(pt.x, pt.y);
+              else ctx.lineTo(pt.x, pt.y);
+            }
+            ctx.stroke();
+
+            var dist = Math.hypot(rocket.x - rocket.targetX, rocket.y - rocket.targetY);
+            if (rocket.vy >= -0.5 || dist < 28 || rocket.y <= rocket.targetY) {
+              explode(rocket.x, rocket.y, rocket.color);
+              rockets.splice(r, 1);
+            }
+          }
+
+          for (var p = particles.length - 1; p >= 0; p--) {
+            var part = particles[p];
+            part.x += part.vx;
+            part.y += part.vy;
+            part.vy += 0.06;
+            part.vx *= 0.985;
+            part.life -= 1;
+
+            var alpha = Math.max(0, part.life / part.maxLife);
+            ctx.beginPath();
+            ctx.fillStyle = part.color;
+            ctx.globalAlpha = alpha;
+            ctx.arc(part.x, part.y, part.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            if (part.life <= 0) particles.splice(p, 1);
+          }
+
+          if (active) animId = requestAnimationFrame(tickFireworks);
+        }
+
+        function start() {
+          active = true;
+          canvas.classList.add("is-active");
+          btn.classList.add("is-on");
+          btn.setAttribute("aria-pressed", "true");
+          btn.textContent = "Fireworks on";
+          if (message) message.classList.add("is-visible");
+          if (controls) controls.hidden = false;
+          if (btnOff) btnOff.setAttribute("aria-pressed", "true");
+          playFireworksMusic();
+          resize();
+          particles = [];
+          rockets = [];
+          launchRocket();
+          launchRingBurst();
+          launchTimer = setInterval(launchRocket, rand(550, 950));
+          ringTimer = setInterval(launchRingBurst, rand(400, 700));
+          tickFireworks();
+        }
+
+        function stop() {
+          active = false;
+          canvas.classList.remove("is-active");
+          btn.classList.remove("is-on");
+          btn.setAttribute("aria-pressed", "false");
+          btn.textContent = "Fireworks";
+          if (message) message.classList.remove("is-visible");
+          if (controls) controls.hidden = true;
+          if (btnOff) btnOff.setAttribute("aria-pressed", "false");
+          stopFireworksMusic();
+          clearInterval(launchTimer);
+          clearInterval(ringTimer);
+          cancelAnimationFrame(animId);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          particles = [];
+          rockets = [];
+        }
+
+        function toggle() {
+          if (active) stop();
+          else start();
+        }
+
+        btn.addEventListener("click", toggle);
+        if (btnOff) btnOff.addEventListener("click", stop);
+
+        window.addEventListener("resize", function () {
+          if (active) resize();
+        });
+      })();
     })();
   </script>
 </body>
