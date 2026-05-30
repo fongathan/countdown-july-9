@@ -1049,6 +1049,71 @@
       text-transform: uppercase;
       cursor: pointer;
       white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .btn-upload--image {
+      background: rgba(255, 158, 200, 0.08);
+    }
+
+    .btn-upload--gif {
+      border-style: solid;
+      border-color: rgba(142, 200, 255, 0.35);
+      background: rgba(142, 200, 255, 0.1);
+    }
+
+    .btn-upload--gif:hover {
+      border-color: var(--sky);
+      background: rgba(142, 200, 255, 0.18);
+    }
+
+    .gif-picker-panel {
+      display: none;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 0.75rem 0.85rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(142, 200, 255, 0.25);
+      background: rgba(142, 200, 255, 0.06);
+    }
+
+    .gif-picker-panel.is-visible { display: flex; }
+
+    .gif-picker-help {
+      margin: 0;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    .gif-picker-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .btn-giphy-open {
+      padding: 0.55rem 0.9rem;
+      font-size: 0.72rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .gif-picker-actions input[type="url"] {
+      flex: 1 1 180px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 0.7rem;
+      border: 1px solid var(--card-border);
+      background: rgba(13, 10, 20, 0.88);
+      color: var(--lavender-soft);
+    }
+
+    .gif-picker-actions input:focus {
+      outline: none;
+      border-color: var(--sky);
     }
 
     .btn-upload:hover {
@@ -1272,9 +1337,7 @@
           </span>
         </div>
 
-        <p class="thread-setup-banner" id="thread-setup-banner" hidden>
-          Live comments need Firebase. Edit <code>firebase-config.js</code> in this folder with your project keys, then reload.
-        </p>
+        <p class="thread-setup-banner" id="thread-setup-banner" hidden></p>
 
         <div class="thread-list" id="thread-list" aria-live="polite"></div>
 
@@ -1287,11 +1350,24 @@
             </div>
           </div>
           <div class="thread-attach-row">
-            <label class="btn-upload">
-              Photo / GIF
-              <input type="file" id="thread-file" accept="image/*,.gif" />
+            <label class="btn-upload btn-upload--image">
+              Upload image
+              <input type="file" id="thread-image-file" accept="image/jpeg,image/png,image/webp,image/avif" />
             </label>
-            <input type="url" id="thread-url" placeholder="Or paste image / GIF link" inputmode="url" />
+            <button type="button" class="btn-upload btn-upload--gif" id="btn-select-gif">Select GIF</button>
+          </div>
+          <div class="gif-picker-panel" id="gif-picker-panel">
+            <p class="gif-picker-help">Search for a GIF on Giphy, copy its link, then paste it below.</p>
+            <div class="gif-picker-actions">
+              <a
+                href="https://giphy.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-ghost btn-giphy-open"
+                id="btn-giphy-open"
+              >Open Giphy search</a>
+              <input type="url" id="thread-gif-url" placeholder="Paste Giphy link here…" inputmode="url" />
+            </div>
           </div>
           <div class="media-preview" id="media-preview">
             <button type="button" class="media-preview-clear" id="media-preview-clear" aria-label="Remove attachment">×</button>
@@ -1881,12 +1957,15 @@
         var CLIENT_KEY = "july9-thread-client";
         var MAX_FILE_BYTES = 1572864;
         var MAX_WIDTH = 900;
+        var MAX_INLINE_PHOTO_CHARS = 850000;
 
         var form = document.getElementById("thread-form");
         var authorEl = document.getElementById("thread-author");
         var textEl = document.getElementById("thread-text");
-        var fileEl = document.getElementById("thread-file");
-        var urlEl = document.getElementById("thread-url");
+        var fileEl = document.getElementById("thread-image-file");
+        var gifUrlEl = document.getElementById("thread-gif-url");
+        var btnSelectGif = document.getElementById("btn-select-gif");
+        var gifPickerPanel = document.getElementById("gif-picker-panel");
         var previewWrap = document.getElementById("media-preview");
         var previewImg = document.getElementById("media-preview-img");
         var previewClear = document.getElementById("media-preview-clear");
@@ -1953,6 +2032,18 @@
           }
         }
 
+        function isGiphyUrl(url) {
+          try {
+            var parsed = new URL(url);
+            if (parsed.protocol !== "https:") return false;
+            var host = parsed.hostname.toLowerCase();
+            return host === "giphy.com" || host.endsWith(".giphy.com")
+              || host === "media.giphy.com" || host === "i.giphy.com";
+          } catch (e) {
+            return false;
+          }
+        }
+
         function normalizeGifUrl(url) {
           try {
             var parsed = new URL(url);
@@ -1992,15 +2083,10 @@
 
         function compressImage(file) {
           if (file.type === "image/gif") {
-            if (file.size > MAX_FILE_BYTES) {
-              return Promise.reject(new Error("GIF must be under 1.5 MB"));
-            }
-            return readFileAsDataUrl(file).then(function (dataUrl) {
-              return { dataUrl: dataUrl, blob: file, kind: "gif" };
-            });
+            return Promise.reject(new Error("Use Select GIF for animated GIFs"));
           }
           if (!/^image\//.test(file.type)) {
-            return Promise.reject(new Error("Please choose an image or GIF"));
+            return Promise.reject(new Error("Please choose a photo (JPG, PNG, or WebP)"));
           }
           if (file.size > MAX_FILE_BYTES * 2) {
             return Promise.reject(new Error("Image must be under 3 MB"));
@@ -2024,7 +2110,10 @@
                   return;
                 }
                 ctx.drawImage(img, 0, 0, w, h);
-                var out = canvas.toDataURL("image/jpeg", 0.82);
+                var out = canvas.toDataURL("image/jpeg", 0.75);
+                if (out.length > MAX_INLINE_PHOTO_CHARS) {
+                  out = canvas.toDataURL("image/jpeg", 0.6);
+                }
                 resolve({ dataUrl: out, blob: dataUrlToBlob(out), kind: "photo" });
               };
               img.onerror = function () { reject(new Error("Invalid image file")); };
@@ -2048,10 +2137,38 @@
         function clearPreview() {
           pendingMedia = null;
           pendingBlob = null;
-          fileEl.value = "";
-          urlEl.value = "";
+          if (fileEl) fileEl.value = "";
+          if (gifUrlEl) gifUrlEl.value = "";
           previewWrap.classList.remove("is-visible");
           previewImg.removeAttribute("src");
+        }
+
+        function showGifPicker() {
+          if (gifPickerPanel) gifPickerPanel.classList.add("is-visible");
+          window.open("https://giphy.com/", "_blank", "noopener,noreferrer");
+          showToast("Search Giphy, copy a GIF link, paste below");
+          if (gifUrlEl) {
+            setTimeout(function () { gifUrlEl.focus(); }, 200);
+          }
+        }
+
+        function applyGifUrl(value) {
+          if (!value) {
+            if (pendingMedia && pendingMedia.type === "url" && pendingMedia.kind === "gif") clearPreview();
+            return;
+          }
+          if (!isGiphyUrl(value)) {
+            showToast("Paste a link from giphy.com");
+            if (gifUrlEl) gifUrlEl.value = "";
+            return;
+          }
+          if (fileEl) fileEl.value = "";
+          var normalized = normalizeGifUrl(value);
+          setPreview({
+            type: "url",
+            src: normalized,
+            kind: "gif"
+          });
         }
 
         function relativeTime(date) {
@@ -2150,10 +2267,17 @@
           scrollThreadToBottom();
         }
 
+        function showSetupBanner(message) {
+          setupBanner.innerHTML = message;
+          setupBanner.hidden = false;
+        }
+
         function initFirebase() {
           var cfg = window.COUNTDOWN_FIREBASE || {};
           if (!cfg.projectId) {
-            setupBanner.hidden = false;
+            showSetupBanner(
+              "Live comments need Firebase. Edit <code>firebase-config.js</code> with your project keys, then reload."
+            );
             submitBtn.disabled = true;
             setThreadStatus(false, "Offline — add Firebase config");
             listEl.innerHTML = '<p class="thread-empty">Connect Firebase in firebase-config.js for live shared comments.</p>';
@@ -2187,28 +2311,47 @@
                     createdAt: data.createdAt
                   });
                 });
+                setupBanner.hidden = true;
+                liveReady = true;
+                submitBtn.disabled = false;
                 setThreadStatus(true, items.length + " comment" + (items.length === 1 ? "" : "s"));
                 renderComments(items);
-              }, function () {
+              }, function (err) {
                 liveReady = false;
-                setupBanner.hidden = false;
                 submitBtn.disabled = true;
-                setThreadStatus(false, "Connection error");
+                var code = err && err.code ? err.code : "";
+                if (code === "permission-denied") {
+                  showSetupBanner(
+                    "Firebase is connected, but <strong>Firestore rules are blocking comments</strong>. " +
+                    "In Firebase console → Firestore → <strong>Rules</strong>, paste the rules from " +
+                    "<code>firebase-config.js</code>, click <strong>Publish</strong>, then reload this page."
+                  );
+                  setThreadStatus(false, "Rules not published");
+                  listEl.innerHTML = '<p class="thread-empty">Waiting for Firestore rules — see the yellow box above.</p>';
+                } else {
+                  showSetupBanner(
+                    "Could not connect to Firestore (" + (code || "unknown error") + "). " +
+                    "Check that Firestore Database is created for project <code>jonlizcountdown</code>, then reload."
+                  );
+                  setThreadStatus(false, "Connection error");
+                }
               });
           } catch (e) {
-            setupBanner.hidden = false;
+            showSetupBanner("Firebase failed to start. Check your config in <code>firebase-config.js</code>.");
             submitBtn.disabled = true;
             setThreadStatus(false, "Firebase error");
           }
         }
 
-        function uploadMedia(blob, kind) {
-          var ext = kind === "gif" ? "gif" : "jpg";
-          var path = "july9-comments/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
-          var ref = storage.ref(path);
-          return ref.put(blob, { contentType: blob.type || "image/jpeg" }).then(function () {
-            return ref.getDownloadURL();
-          });
+        function preparePhotoForPost(media) {
+          var dataUrl = media && media.dataUrl ? media.dataUrl : "";
+          if (!dataUrl) {
+            return Promise.reject(new Error("Photo attachment missing — try uploading again"));
+          }
+          if (dataUrl.length > MAX_INLINE_PHOTO_CHARS) {
+            return Promise.reject(new Error("Photo is too large — try a smaller image"));
+          }
+          return Promise.resolve({ url: dataUrl, kind: "photo" });
         }
 
         previewClear.addEventListener("click", clearPreview);
@@ -2216,13 +2359,13 @@
         fileEl.addEventListener("change", function () {
           var file = fileEl.files && fileEl.files[0];
           if (!file) return;
-          urlEl.value = "";
+          if (gifUrlEl) gifUrlEl.value = "";
           compressImage(file).then(function (result) {
             setPreview({
               type: "upload",
               dataUrl: result.dataUrl,
               blob: result.blob,
-              kind: result.kind
+              kind: "photo"
             });
           }).catch(function (err) {
             fileEl.value = "";
@@ -2230,25 +2373,20 @@
           });
         });
 
-        urlEl.addEventListener("change", function () {
-          var value = urlEl.value.trim();
-          if (!value) {
-            if (pendingMedia && pendingMedia.type === "url") clearPreview();
-            return;
-          }
-          if (!isAllowedMediaUrl(value)) {
-            showToast("Use an https image/GIF link");
-            urlEl.value = "";
-            return;
-          }
-          fileEl.value = "";
-          var normalized = normalizeGifUrl(value);
-          setPreview({
-            type: "url",
-            src: normalized,
-            kind: /\.gif(\?|$)/i.test(normalized) ? "gif" : "photo"
+        if (btnSelectGif) {
+          btnSelectGif.addEventListener("click", showGifPicker);
+        }
+
+        if (gifUrlEl) {
+          gifUrlEl.addEventListener("change", function () {
+            applyGifUrl(gifUrlEl.value.trim());
           });
-        });
+          gifUrlEl.addEventListener("paste", function () {
+            setTimeout(function () {
+              applyGifUrl(gifUrlEl.value.trim());
+            }, 0);
+          });
+        }
 
         form.addEventListener("submit", function (event) {
           event.preventDefault();
@@ -2279,10 +2417,8 @@
                 url: pendingMedia.src,
                 kind: pendingMedia.kind
               });
-            } else if (pendingBlob) {
-              mediaPromise = uploadMedia(pendingBlob, pendingMedia.kind).then(function (url) {
-                return { url: url, kind: pendingMedia.kind };
-              });
+            } else if (pendingMedia.type === "upload") {
+              mediaPromise = preparePhotoForPost(pendingMedia);
             }
           }
 
@@ -2299,8 +2435,12 @@
             textEl.value = "";
             clearPreview();
             showToast("✦ Posted");
-          }).catch(function () {
-            showToast("Could not post — check Firebase rules");
+          }).catch(function (err) {
+            var msg = err && err.message ? err.message : "Could not post — try again";
+            if (err && err.code === "permission-denied") {
+              msg = "Post blocked — check Firestore rules";
+            }
+            showToast(msg);
           }).finally(function () {
             submitBtn.disabled = false;
           });
