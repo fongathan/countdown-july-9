@@ -1079,29 +1079,14 @@
 
     .gif-picker-panel.is-visible { display: flex; }
 
-    .gif-picker-help {
-      margin: 0;
-      font-size: 0.78rem;
-      line-height: 1.45;
-      color: var(--text-muted);
-    }
-
-    .gif-picker-actions {
+    .gif-search-row {
       display: flex;
-      flex-wrap: wrap;
       gap: 0.5rem;
       align-items: center;
     }
 
-    .btn-giphy-open {
-      padding: 0.55rem 0.9rem;
-      font-size: 0.72rem;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .gif-picker-actions input[type="url"] {
-      flex: 1 1 180px;
+    .gif-search-row input[type="search"] {
+      flex: 1;
       font-family: inherit;
       font-size: 0.88rem;
       padding: 0.6rem 0.8rem;
@@ -1111,9 +1096,89 @@
       color: var(--lavender-soft);
     }
 
-    .gif-picker-actions input:focus {
+    .gif-search-row input:focus {
       outline: none;
       border-color: var(--sky);
+    }
+
+    .gif-search-row .btn {
+      padding: 0.55rem 0.85rem;
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+    .gif-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      gap: 0.45rem;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 0.15rem;
+      border-radius: 0.65rem;
+      background: rgba(13, 10, 20, 0.45);
+      border: 1px solid rgba(142, 200, 255, 0.12);
+    }
+
+    .gif-grid-empty {
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: 1rem 0.5rem;
+      text-align: center;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    .gif-grid-empty code {
+      font-size: 0.72rem;
+      color: var(--lavender-soft);
+    }
+
+    .gif-grid-item {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      padding: 0;
+      border: 2px solid transparent;
+      border-radius: 0.55rem;
+      overflow: hidden;
+      cursor: pointer;
+      background: #0a0812;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .gif-grid-item:hover {
+      border-color: var(--sky);
+      transform: scale(1.03);
+    }
+
+    .gif-grid-item.is-selected {
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(232, 197, 71, 0.35);
+    }
+
+    .gif-grid-item img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .gif-selected-url {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 0.65rem;
+      border: 1px solid var(--card-border);
+      background: rgba(13, 10, 20, 0.65);
+      color: var(--text-muted);
+    }
+
+    .btn-upload--gif.is-active {
+      border-color: var(--sky);
+      background: rgba(142, 200, 255, 0.2);
+      box-shadow: 0 0 16px rgba(142, 200, 255, 0.2);
     }
 
     .btn-upload:hover {
@@ -1354,20 +1419,15 @@
               Upload image
               <input type="file" id="thread-image-file" accept="image/jpeg,image/png,image/webp,image/avif" />
             </label>
-            <button type="button" class="btn-upload btn-upload--gif" id="btn-select-gif">Select GIF</button>
+            <button type="button" class="btn-upload btn-upload--gif" id="btn-select-gif" aria-expanded="false" aria-controls="gif-picker-panel">Select GIF</button>
           </div>
           <div class="gif-picker-panel" id="gif-picker-panel">
-            <p class="gif-picker-help">Search for a GIF on Giphy, copy its link, then paste it below.</p>
-            <div class="gif-picker-actions">
-              <a
-                href="https://giphy.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="btn btn-ghost btn-giphy-open"
-                id="btn-giphy-open"
-              >Open Giphy search</a>
-              <input type="url" id="thread-gif-url" placeholder="Paste Giphy link here…" inputmode="url" />
+            <div class="gif-search-row">
+              <input type="search" id="gif-search-input" placeholder="Search Giphy…" autocomplete="off" aria-label="Search Giphy" />
+              <button type="button" class="btn btn-ghost" id="gif-search-btn">Search</button>
             </div>
+            <div class="gif-grid" id="gif-grid" role="listbox" aria-label="Giphy results"></div>
+            <input type="url" id="thread-gif-url" class="gif-selected-url" readonly placeholder="Selected GIF link will appear here…" tabindex="-1" aria-label="Selected GIF link" />
           </div>
           <div class="media-preview" id="media-preview">
             <button type="button" class="media-preview-clear" id="media-preview-clear" aria-label="Remove attachment">×</button>
@@ -1966,6 +2026,10 @@
         var gifUrlEl = document.getElementById("thread-gif-url");
         var btnSelectGif = document.getElementById("btn-select-gif");
         var gifPickerPanel = document.getElementById("gif-picker-panel");
+        var gifSearchInput = document.getElementById("gif-search-input");
+        var gifSearchBtn = document.getElementById("gif-search-btn");
+        var gifGrid = document.getElementById("gif-grid");
+        var selectedGifBtn = null;
         var previewWrap = document.getElementById("media-preview");
         var previewImg = document.getElementById("media-preview-img");
         var previewClear = document.getElementById("media-preview-clear");
@@ -2139,16 +2203,135 @@
           pendingBlob = null;
           if (fileEl) fileEl.value = "";
           if (gifUrlEl) gifUrlEl.value = "";
+          if (selectedGifBtn) {
+            selectedGifBtn.classList.remove("is-selected");
+            selectedGifBtn = null;
+          }
           previewWrap.classList.remove("is-visible");
           previewImg.removeAttribute("src");
         }
 
-        function showGifPicker() {
-          if (gifPickerPanel) gifPickerPanel.classList.add("is-visible");
-          window.open("https://giphy.com/", "_blank", "noopener,noreferrer");
-          showToast("Search Giphy, copy a GIF link, paste below");
-          if (gifUrlEl) {
-            setTimeout(function () { gifUrlEl.focus(); }, 200);
+        function getGiphyApiKey() {
+          return window.COUNTDOWN_GIPHY_API_KEY || "";
+        }
+
+        function giphyApiRequest(endpoint) {
+          var key = getGiphyApiKey();
+          if (!key) {
+            return Promise.reject(new Error("missing-key"));
+          }
+          var sep = endpoint.indexOf("?") === -1 ? "?" : "&";
+          return fetch("https://api.giphy.com/v1/gifs/" + endpoint + sep + "api_key=" + encodeURIComponent(key))
+            .then(function (res) { return res.json(); })
+            .then(function (json) {
+              if (json.meta && json.meta.status !== 200) {
+                throw new Error(json.meta.msg || "Giphy request failed");
+              }
+              return json.data || [];
+            });
+        }
+
+        function showGifGridMessage(html) {
+          if (!gifGrid) return;
+          gifGrid.innerHTML = '<p class="gif-grid-empty">' + html + "</p>";
+        }
+
+        function selectGiphyItem(item, btnEl) {
+          if (!item || !item.id) return;
+          var mediaUrl = "https://media.giphy.com/media/" + item.id + "/giphy.gif";
+          var pageUrl = item.url || ("https://giphy.com/gifs/" + item.id);
+          if (gifUrlEl) gifUrlEl.value = pageUrl;
+          if (selectedGifBtn) selectedGifBtn.classList.remove("is-selected");
+          selectedGifBtn = btnEl || null;
+          if (selectedGifBtn) selectedGifBtn.classList.add("is-selected");
+          if (fileEl) fileEl.value = "";
+          setPreview({
+            type: "url",
+            src: mediaUrl,
+            kind: "gif"
+          });
+          showToast("GIF selected — tap Post");
+        }
+
+        function renderGifGrid(items) {
+          if (!gifGrid) return;
+          gifGrid.innerHTML = "";
+          if (!items.length) {
+            showGifGridMessage("No GIFs found — try another search.");
+            return;
+          }
+          items.forEach(function (item) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "gif-grid-item";
+            btn.setAttribute("role", "option");
+            btn.setAttribute("aria-label", item.title || "Select GIF");
+            var thumb = item.images && (item.images.fixed_height_small || item.images.fixed_width_small || item.images.original);
+            var img = document.createElement("img");
+            img.src = thumb ? thumb.url : mediaUrlFromGiphyItem(item);
+            img.alt = item.title || "GIF";
+            img.loading = "lazy";
+            btn.appendChild(img);
+            btn.addEventListener("click", function () {
+              selectGiphyItem(item, btn);
+            });
+            gifGrid.appendChild(btn);
+          });
+        }
+
+        function mediaUrlFromGiphyItem(item) {
+          return "https://media.giphy.com/media/" + item.id + "/giphy.gif";
+        }
+
+        function loadTrendingGifs() {
+          if (!getGiphyApiKey()) {
+            showGifGridMessage(
+              "Add <code>COUNTDOWN_GIPHY_API_KEY</code> to <code>firebase-config.js</code> " +
+              "(free at <a href='https://developers.giphy.com/dashboard/' target='_blank' rel='noopener noreferrer'>developers.giphy.com</a>)."
+            );
+            return;
+          }
+          showGifGridMessage("Loading GIFs…");
+          giphyApiRequest("trending?limit=24&rating=g")
+            .then(renderGifGrid)
+            .catch(function () {
+              showGifGridMessage("Could not load GIFs — check your Giphy API key.");
+            });
+        }
+
+        function searchGifs(query) {
+          var q = String(query || "").trim();
+          if (!getGiphyApiKey()) {
+            loadTrendingGifs();
+            return;
+          }
+          if (!q) {
+            loadTrendingGifs();
+            return;
+          }
+          showGifGridMessage("Searching…");
+          giphyApiRequest("search?q=" + encodeURIComponent(q) + "&limit=24&rating=g")
+            .then(renderGifGrid)
+            .catch(function () {
+              showGifGridMessage("Search failed — try again.");
+            });
+        }
+
+        function toggleGifPicker() {
+          if (!gifPickerPanel || !btnSelectGif) return;
+          var open = !gifPickerPanel.classList.contains("is-visible");
+          gifPickerPanel.classList.toggle("is-visible", open);
+          btnSelectGif.classList.toggle("is-active", open);
+          btnSelectGif.setAttribute("aria-expanded", open ? "true" : "false");
+          if (open) {
+            if (gifSearchInput && !gifSearchInput.value.trim()) {
+              loadTrendingGifs();
+            } else if (gifSearchInput) {
+              searchGifs(gifSearchInput.value);
+            }
+            setTimeout(function () {
+              if (gifSearchInput) gifSearchInput.focus();
+            }, 100);
           }
         }
 
@@ -2374,17 +2557,21 @@
         });
 
         if (btnSelectGif) {
-          btnSelectGif.addEventListener("click", showGifPicker);
+          btnSelectGif.addEventListener("click", toggleGifPicker);
         }
 
-        if (gifUrlEl) {
-          gifUrlEl.addEventListener("change", function () {
-            applyGifUrl(gifUrlEl.value.trim());
+        if (gifSearchBtn) {
+          gifSearchBtn.addEventListener("click", function () {
+            searchGifs(gifSearchInput ? gifSearchInput.value : "");
           });
-          gifUrlEl.addEventListener("paste", function () {
-            setTimeout(function () {
-              applyGifUrl(gifUrlEl.value.trim());
-            }, 0);
+        }
+
+        if (gifSearchInput) {
+          gifSearchInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              searchGifs(gifSearchInput.value);
+            }
           });
         }
 

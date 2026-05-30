@@ -21,3 +21,6 @@ window.COUNTDOWN_FIREBASE = {
   messagingSenderId: "756309325437",
   appId: "1:756309325437:web:279ad0b423e7f75d2b6314"
 };
+
+/** Free key from https://developers.giphy.com/dashboard/ — powers in-page GIF search */
+window.COUNTDOWN_GIPHY_API_KEY = "SL4wskStjsIgsN0hZKtZYCAWqmiIL4Yg";
