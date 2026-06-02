@@ -959,6 +959,17 @@
 
     .thread-item:last-child { border-bottom: none; }
 
+    .thread-item.is-agent .thread-item-avatar {
+      background: linear-gradient(135deg, var(--lover-pink), var(--gold));
+    }
+
+    .thread-item.is-agent .thread-item-head strong::after {
+      content: " · fan agent";
+      font-weight: 500;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+    }
+
     .thread-item-avatar {
       width: 2rem;
       height: 2rem;
@@ -1541,6 +1552,8 @@
   <div class="toast" id="toast" role="status"></div>
 
   <script src="firebase-config.js"></script>
+  <script src="giphy-config.js"></script>
+  <script src="fan-agents.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
@@ -2079,6 +2092,7 @@
         var db = null;
         var storage = null;
         var liveReady = false;
+        var fanAgentsStarted = false;
 
         var clientId = localStorage.getItem(CLIENT_KEY);
         if (!clientId) {
@@ -2294,7 +2308,7 @@
         function loadTrendingGifs() {
           if (!getGiphyApiKey()) {
             showGifGridMessage(
-              "Add <code>COUNTDOWN_GIPHY_API_KEY</code> to <code>firebase-config.js</code> " +
+              "Add <code>COUNTDOWN_GIPHY_API_KEY</code> to <code>giphy-config.js</code> " +
               "(free at <a href='https://developers.giphy.com/dashboard/' target='_blank' rel='noopener noreferrer'>developers.giphy.com</a>)."
             );
             return;
@@ -2378,6 +2392,7 @@
           docs.forEach(function (item) {
             var card = document.createElement("article");
             card.className = "thread-item";
+            if (item.isAgent) card.classList.add("is-agent");
             card.setAttribute("data-id", item.id);
 
             var av = document.createElement("div");
@@ -2444,6 +2459,75 @@
           setupBanner.hidden = false;
         }
 
+        function initFanAgents() {
+          var cfg = window.COUNTDOWN_FAN_AGENTS;
+          if (fanAgentsStarted || !cfg || !liveReady || !db) return;
+          fanAgentsStarted = true;
+
+          var intervalMs = cfg.intervalMs || (60 * 60 * 1000);
+          var schedulerRef = db.collection("july9-meta").doc("agent-scheduler");
+          var agentClientId = cfg.clientId || "fan-agent-system";
+          var checkTimer = null;
+
+          function pickAgentComment() {
+            var personas = cfg.personas || [];
+            var compliments = cfg.compliments || [];
+            if (!personas.length || !compliments.length) return null;
+            return {
+              author: personas[Math.floor(Math.random() * personas.length)],
+              text: compliments[Math.floor(Math.random() * compliments.length)]
+            };
+          }
+
+          function tryPostAgentComment() {
+            if (!liveReady || !db) return;
+
+            db.runTransaction(function (transaction) {
+              return transaction.get(schedulerRef).then(function (doc) {
+                var now = Date.now();
+                var lastRun = 0;
+                if (doc.exists) {
+                  var data = doc.data() || {};
+                  if (data.lastRunAt && data.lastRunAt.toMillis) {
+                    lastRun = data.lastRunAt.toMillis();
+                  } else if (typeof data.lastRunMs === "number") {
+                    lastRun = data.lastRunMs;
+                  }
+                }
+                if (lastRun && now - lastRun < intervalMs) return;
+
+                var pick = pickAgentComment();
+                if (!pick) return;
+
+                transaction.set(schedulerRef, {
+                  lastRunAt: firebase.firestore.FieldValue.serverTimestamp(),
+                  lastRunMs: now,
+                  lastAuthor: pick.author
+                }, { merge: true });
+
+                var commentRef = db.collection("july9-comments").doc();
+                transaction.set(commentRef, {
+                  author: pick.author,
+                  text: pick.text,
+                  mediaUrl: "",
+                  mediaKind: "",
+                  clientId: agentClientId,
+                  isAgent: true,
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+              });
+            }).catch(function () {
+              /* Agent posts are best-effort; skip if scheduler rules are missing. */
+            });
+          }
+
+          tryPostAgentComment();
+          checkTimer = setInterval(tryPostAgentComment, 60000);
+          window.addEventListener("beforeunload", function () {
+            if (checkTimer) clearInterval(checkTimer);
+          });
+        }
+
         function initFirebase() {
           var cfg = window.COUNTDOWN_FIREBASE || {};
           if (!cfg.projectId) {
@@ -2480,6 +2564,7 @@
                     mediaUrl: data.mediaUrl || "",
                     mediaKind: data.mediaKind || "",
                     clientId: data.clientId,
+                    isAgent: !!data.isAgent,
                     createdAt: data.createdAt
                   });
                 });
@@ -2488,6 +2573,7 @@
                 submitBtn.disabled = false;
                 setThreadStatus(true, items.length + " comment" + (items.length === 1 ? "" : "s"));
                 renderComments(items);
+                initFanAgents();
               }, function (err) {
                 liveReady = false;
                 submitBtn.disabled = true;

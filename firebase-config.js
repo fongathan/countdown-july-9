@@ -6,6 +6,9 @@
  *     allow read, create, delete: if true;
  *     allow update: if false;
  *   }
+ *   match /july9-meta/{id} {
+ *     allow read, create, update: if true;
+ *   }
  *
  * Storage rules (Console → Storage → Rules):
  *   match /july9-comments/{fileName} {
@@ -22,5 +25,4 @@ window.COUNTDOWN_FIREBASE = {
   appId: "1:756309325437:web:279ad0b423e7f75d2b6314"
 };
 
-/** Free key from https://developers.giphy.com/dashboard/ — powers in-page GIF search */
-window.COUNTDOWN_GIPHY_API_KEY = "SL4wskStjsIgsN0hZKtZYCAWqmiIL4Yg";
+/** Giphy search uses COUNTDOWN_GIPHY_API_KEY in giphy-config.js */
