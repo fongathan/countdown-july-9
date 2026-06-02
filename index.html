@@ -30,6 +30,7 @@
       --card-border: rgba(201, 184, 232, 0.22);
       --glow: rgba(232, 197, 71, 0.4);
       --warn: #fbbf24;
+      --sky-cycle: 60s;
       --era-stripe: linear-gradient(
         90deg,
         var(--mint) 0%,
@@ -60,18 +61,60 @@
       justify-content: flex-start;
       padding: 2rem 1.25rem 3rem;
       overflow-x: hidden;
+      animation: body-bg-cycle var(--sky-cycle) ease-in-out infinite;
     }
 
-    .bg {
+    @keyframes body-bg-cycle {
+      0%, 100% { background-color: var(--midnight); }
+      50% { background-color: #7eb8dc; }
+    }
+
+    .sky-layer {
       position: fixed;
       inset: 0;
       z-index: 0;
       pointer-events: none;
+    }
+
+    .bg-night {
       background:
         radial-gradient(ellipse 90% 70% at 50% -10%, rgba(201, 184, 232, 0.25), transparent 55%),
         radial-gradient(ellipse 60% 50% at 10% 80%, rgba(255, 158, 200, 0.12), transparent 50%),
         radial-gradient(ellipse 50% 40% at 90% 60%, rgba(158, 228, 200, 0.1), transparent 45%),
         linear-gradient(180deg, #0a0812 0%, var(--midnight) 35%, var(--midnight-mid) 70%, #120e1c 100%);
+    }
+
+    .bg-day {
+      opacity: 0;
+      background:
+        radial-gradient(circle at 78% 14%, rgba(255, 248, 210, 0.95) 0%, rgba(255, 220, 130, 0.35) 8%, transparent 22%),
+        radial-gradient(ellipse 100% 70% at 50% -5%, rgba(174, 220, 255, 0.75), transparent 58%),
+        radial-gradient(ellipse 70% 50% at 15% 85%, rgba(255, 200, 220, 0.35), transparent 52%),
+        radial-gradient(ellipse 55% 45% at 88% 70%, rgba(158, 228, 200, 0.28), transparent 48%),
+        linear-gradient(180deg, #6eb8e8 0%, #9fd4f5 38%, #ffe9c8 72%, #f7d8a8 100%);
+      animation: sky-day-fade var(--sky-cycle) ease-in-out infinite;
+    }
+
+    @keyframes sky-day-fade {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+
+    .sky-sun {
+      position: fixed;
+      top: 11%;
+      right: 16%;
+      width: clamp(56px, 12vw, 84px);
+      height: clamp(56px, 12vw, 84px);
+      border-radius: 50%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(circle, #fffef5 0%, #ffe98a 42%, rgba(255, 210, 90, 0.15) 68%);
+      box-shadow:
+        0 0 40px rgba(255, 230, 140, 0.75),
+        0 0 90px rgba(255, 200, 80, 0.35);
+      animation: sky-day-fade var(--sky-cycle) ease-in-out infinite;
     }
 
     .stars {
@@ -80,6 +123,12 @@
       z-index: 0;
       pointer-events: none;
       overflow: hidden;
+      animation: sky-stars-fade var(--sky-cycle) ease-in-out infinite;
+    }
+
+    @keyframes sky-stars-fade {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
     }
 
     .star {
@@ -1297,8 +1346,20 @@
 
     .fireworks-controls[hidden] { display: none; }
 
+    @media (prefers-reduced-motion: reduce) {
+      body,
+      .bg-day,
+      .sky-sun,
+      .stars {
+        animation: none !important;
+      }
+      .bg-day,
+      .sky-sun { opacity: 0; }
+      .stars { opacity: 1; }
+    }
+
     @media print {
-      .bg, .stars, .sparkle-line, .vinyl, .actions, .toast, .music-panel, .feed-post, #fireworks-canvas, .fireworks-message, .fireworks-controls { display: none !important; }
+      .bg-night, .bg-day, .sky-sun, .stars, .sparkle-line, .vinyl, .actions, .toast, .music-panel, .feed-post, #fireworks-canvas, .fireworks-message, .fireworks-controls { display: none !important; }
       body { background: #fff; color: #111; }
       h1 { color: #111; background: none; -webkit-text-fill-color: #111; }
     }
@@ -1306,7 +1367,9 @@
 </head>
 <body>
   <div class="sparkle-line" aria-hidden="true"></div>
-  <div class="bg" aria-hidden="true"></div>
+  <div class="bg-night sky-layer" aria-hidden="true"></div>
+  <div class="bg-day sky-layer" aria-hidden="true"></div>
+  <div class="sky-sun" aria-hidden="true"></div>
   <div class="stars" id="stars" aria-hidden="true"></div>
   <canvas id="fireworks-canvas" aria-hidden="true"></canvas>
   <p class="fireworks-message" id="fireworks-message" aria-live="polite">Congrats! It's almost time, Boobie!!!</p>
