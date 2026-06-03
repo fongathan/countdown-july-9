@@ -1031,6 +1031,13 @@
       object-fit: cover;
     }
 
+    .thread-item-media video {
+      display: block;
+      width: 100%;
+      max-height: 280px;
+      background: #000;
+    }
+
     .thread-item-delete {
       margin-top: 0.35rem;
       padding: 0;
@@ -1130,6 +1137,17 @@
     .btn-upload--gif:hover {
       border-color: var(--sky);
       background: rgba(142, 200, 255, 0.18);
+    }
+
+    .btn-upload--video {
+      border-style: solid;
+      border-color: rgba(158, 228, 200, 0.35);
+      background: rgba(158, 228, 200, 0.1);
+    }
+
+    .btn-upload--video:hover {
+      border-color: var(--mint);
+      background: rgba(158, 228, 200, 0.18);
     }
 
     .gif-picker-panel {
@@ -1261,11 +1279,22 @@
 
     .media-preview.is-visible { display: block; }
 
-    .media-preview img {
+    .media-preview img,
+    .media-preview video {
       display: block;
       width: 100%;
       max-height: 180px;
       object-fit: cover;
+    }
+
+    .media-preview video {
+      object-fit: contain;
+      background: #000;
+    }
+
+    .media-preview img[hidden],
+    .media-preview video[hidden] {
+      display: none;
     }
 
     .media-preview-clear {
@@ -1494,6 +1523,10 @@
               Upload photo
               <input type="file" id="thread-image-file" accept="image/jpeg,image/png,image/webp,image/avif" />
             </label>
+            <label class="btn-upload btn-upload--video">
+              Upload video
+              <input type="file" id="thread-video-file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" />
+            </label>
             <button type="button" class="btn-upload btn-upload--gif" id="btn-select-gif" aria-expanded="false" aria-controls="gif-picker-panel">Search Giphy</button>
           </div>
           <div class="gif-picker-panel" id="gif-picker-panel">
@@ -1506,7 +1539,8 @@
           </div>
           <div class="media-preview" id="media-preview">
             <button type="button" class="media-preview-clear" id="media-preview-clear" aria-label="Remove attachment">×</button>
-            <img id="media-preview-img" alt="Attachment preview" />
+            <img id="media-preview-img" alt="Attachment preview" hidden />
+            <video id="media-preview-video" controls playsinline preload="metadata" hidden></video>
           </div>
           <button type="submit" class="btn btn-primary" id="thread-submit" style="align-self:flex-start">Post</button>
         </form>
@@ -2064,12 +2098,15 @@
       (function initLiveThread() {
         var CLIENT_KEY = "july9-thread-client";
         var MAX_FILE_BYTES = 1572864;
+        var MAX_VIDEO_BYTES = 25 * 1024 * 1024;
         var MAX_WIDTH = 900;
+        var ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 
         var form = document.getElementById("thread-form");
         var authorEl = document.getElementById("thread-author");
         var textEl = document.getElementById("thread-text");
         var fileEl = document.getElementById("thread-image-file");
+        var videoEl = document.getElementById("thread-video-file");
         var gifUrlEl = document.getElementById("thread-gif-url");
         var btnSelectGif = document.getElementById("btn-select-gif");
         var gifPickerPanel = document.getElementById("gif-picker-panel");
@@ -2079,6 +2116,7 @@
         var selectedGifBtn = null;
         var previewWrap = document.getElementById("media-preview");
         var previewImg = document.getElementById("media-preview-img");
+        var previewVideo = document.getElementById("media-preview-video");
         var previewClear = document.getElementById("media-preview-clear");
         var listEl = document.getElementById("thread-list");
         var statusEl = document.getElementById("thread-status");
@@ -2170,6 +2208,21 @@
           return new Blob([bytes], { type: mime });
         }
 
+        function prepareVideo(file) {
+          if (ALLOWED_VIDEO_TYPES.indexOf(file.type) === -1) {
+            return Promise.reject(new Error("Use MP4, WebM, or MOV video"));
+          }
+          if (file.size > MAX_VIDEO_BYTES) {
+            return Promise.reject(new Error("Video must be under 25 MB"));
+          }
+          return Promise.resolve({
+            type: "upload",
+            blob: file,
+            previewUrl: URL.createObjectURL(file),
+            kind: "video"
+          });
+        }
+
         function compressImage(file) {
           if (file.type === "image/gif") {
             return Promise.reject(new Error("Use Search Giphy for animated GIFs"));
@@ -2208,29 +2261,66 @@
           });
         }
 
+        function revokePreviewUrl(media) {
+          if (media && media.previewUrl) {
+            URL.revokeObjectURL(media.previewUrl);
+          }
+        }
+
         function setPreview(media) {
+          revokePreviewUrl(pendingMedia);
           pendingMedia = media;
           pendingBlob = media && media.blob ? media.blob : null;
           if (!media) {
             previewWrap.classList.remove("is-visible");
+            previewImg.hidden = true;
             previewImg.removeAttribute("src");
+            if (previewVideo) {
+              previewVideo.hidden = true;
+              previewVideo.removeAttribute("src");
+              previewVideo.load();
+            }
             return;
           }
-          previewImg.src = media.type === "url" ? media.src : media.dataUrl;
+          if (media.kind === "video") {
+            previewImg.hidden = true;
+            previewImg.removeAttribute("src");
+            if (previewVideo) {
+              previewVideo.hidden = false;
+              previewVideo.src = media.previewUrl || media.src;
+              previewVideo.load();
+            }
+          } else {
+            if (previewVideo) {
+              previewVideo.hidden = true;
+              previewVideo.removeAttribute("src");
+              previewVideo.load();
+            }
+            previewImg.hidden = false;
+            previewImg.src = media.type === "url" ? media.src : media.dataUrl;
+          }
           previewWrap.classList.add("is-visible");
         }
 
         function clearPreview() {
+          revokePreviewUrl(pendingMedia);
           pendingMedia = null;
           pendingBlob = null;
           if (fileEl) fileEl.value = "";
+          if (videoEl) videoEl.value = "";
           if (gifUrlEl) gifUrlEl.value = "";
           if (selectedGifBtn) {
             selectedGifBtn.classList.remove("is-selected");
             selectedGifBtn = null;
           }
           previewWrap.classList.remove("is-visible");
+          previewImg.hidden = true;
           previewImg.removeAttribute("src");
+          if (previewVideo) {
+            previewVideo.hidden = true;
+            previewVideo.removeAttribute("src");
+            previewVideo.load();
+          }
         }
 
         function getGiphyApiKey() {
@@ -2271,6 +2361,7 @@
           selectedGifBtn = btnEl || null;
           if (selectedGifBtn) selectedGifBtn.classList.add("is-selected");
           if (fileEl) fileEl.value = "";
+          if (videoEl) videoEl.value = "";
           setPreview({
             type: "url",
             src: mediaUrl,
@@ -2424,11 +2515,20 @@
             if (item.mediaUrl) {
               var mediaWrap = document.createElement("div");
               mediaWrap.className = "thread-item-media";
-              var img = document.createElement("img");
-              img.alt = item.mediaKind === "gif" ? "GIF" : "Photo";
-              img.loading = "lazy";
-              img.src = item.mediaUrl;
-              mediaWrap.appendChild(img);
+              if (item.mediaKind === "video") {
+                var video = document.createElement("video");
+                video.controls = true;
+                video.playsInline = true;
+                video.preload = "metadata";
+                video.src = item.mediaUrl;
+                mediaWrap.appendChild(video);
+              } else {
+                var img = document.createElement("img");
+                img.alt = item.mediaKind === "gif" ? "GIF" : "Photo";
+                img.loading = "lazy";
+                img.src = item.mediaUrl;
+                mediaWrap.appendChild(img);
+              }
               body.appendChild(mediaWrap);
             }
 
@@ -2602,10 +2702,19 @@
         }
 
         function uploadMedia(blob, kind) {
-          var ext = kind === "gif" ? "gif" : "jpg";
+          var ext = "jpg";
+          var contentType = blob.type || "image/jpeg";
+          if (kind === "gif") {
+            ext = "gif";
+          } else if (kind === "video") {
+            if (blob.type === "video/webm") ext = "webm";
+            else if (blob.type === "video/quicktime") ext = "mov";
+            else ext = "mp4";
+            contentType = blob.type || "video/mp4";
+          }
           var path = "july9-comments/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
           var ref = storage.ref(path);
-          return ref.put(blob, { contentType: blob.type || "image/jpeg" }).then(function () {
+          return ref.put(blob, { contentType: contentType }).then(function () {
             return ref.getDownloadURL();
           });
         }
@@ -2616,6 +2725,7 @@
           var file = fileEl.files && fileEl.files[0];
           if (!file) return;
           if (gifUrlEl) gifUrlEl.value = "";
+          if (videoEl) videoEl.value = "";
           if (selectedGifBtn) {
             selectedGifBtn.classList.remove("is-selected");
             selectedGifBtn = null;
@@ -2632,6 +2742,27 @@
             showToast(err.message || "Could not attach file");
           });
         });
+
+        if (videoEl) {
+          videoEl.addEventListener("change", function () {
+            var file = videoEl.files && videoEl.files[0];
+            if (!file) return;
+            if (gifUrlEl) gifUrlEl.value = "";
+            if (fileEl) fileEl.value = "";
+            if (selectedGifBtn) {
+              selectedGifBtn.classList.remove("is-selected");
+              selectedGifBtn = null;
+            }
+            if (gifPickerPanel) gifPickerPanel.classList.remove("is-visible");
+            prepareVideo(file).then(function (result) {
+              setPreview(result);
+              showToast("Video attached — tap Post");
+            }).catch(function (err) {
+              videoEl.value = "";
+              showToast(err.message || "Could not attach video");
+            });
+          });
+        }
 
         if (btnSelectGif) {
           btnSelectGif.addEventListener("click", toggleGifPicker);
@@ -2673,6 +2804,9 @@
           }
 
           submitBtn.disabled = true;
+          if (pendingMedia && pendingMedia.kind === "video") {
+            showToast("Uploading video…");
+          }
 
           var mediaPromise = Promise.resolve({ url: "", kind: "" });
           if (pendingMedia) {
@@ -2704,7 +2838,9 @@
           }).catch(function (err) {
             var msg = err && err.message ? err.message : "Could not post — check Firebase rules";
             if (err && err.code === "permission-denied") {
-              msg = "Post blocked — check Firestore rules";
+              msg = pendingMedia && pendingMedia.kind === "video"
+                ? "Video blocked — update Storage rules in Firebase"
+                : "Post blocked — check Firestore rules";
             }
             showToast(msg);
           }).finally(function () {
