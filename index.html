@@ -1126,22 +1126,45 @@
       display: none;
     }
 
-    .thread-hidden-file-input {
-      position: fixed;
-      right: 0;
-      bottom: 0;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      border: 0;
-      padding: 0;
-    }
-
     .thread-attach-note {
       margin: 0;
       font-size: 0.68rem;
       color: var(--text-muted);
       line-height: 1.4;
+    }
+
+    .thread-video-url,
+    .thread-drop-zone {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.82rem;
+      border-radius: 0.7rem;
+      border: 1px solid var(--card-border);
+      background: rgba(13, 10, 20, 0.88);
+      color: var(--lavender-soft);
+    }
+
+    .thread-video-url {
+      padding: 0.6rem 0.8rem;
+    }
+
+    .thread-video-url:focus {
+      outline: none;
+      border-color: var(--mint);
+    }
+
+    .thread-drop-zone {
+      padding: 0.75rem 0.85rem;
+      text-align: center;
+      border-style: dashed;
+      color: var(--text-muted);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .thread-drop-zone.is-dragover {
+      border-color: var(--mint);
+      background: rgba(158, 228, 200, 0.08);
+      color: var(--lavender-soft);
     }
 
     .btn-upload--image {
@@ -1160,9 +1183,22 @@
     }
 
     .btn-upload--video {
+      position: relative;
+      overflow: hidden;
       border-style: solid;
       border-color: rgba(158, 228, 200, 0.35);
       background: rgba(158, 228, 200, 0.1);
+    }
+
+    .btn-upload--video > input[type="file"] {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      font-size: 0;
     }
 
     .btn-upload--video:hover {
@@ -1554,7 +1590,7 @@
 
         <div class="thread-list" id="thread-list" aria-live="polite"></div>
 
-        <form class="thread-composer" id="thread-form">
+        <form class="thread-composer" id="thread-form" novalidate>
           <div class="thread-composer-row">
             <div class="thread-item-avatar" id="composer-avatar" aria-hidden="true">?</div>
             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0.55rem">
@@ -1567,10 +1603,15 @@
               Upload photo
               <input type="file" id="thread-image-file" accept="image/jpeg,image/png,image/webp,image/avif" />
             </label>
-            <button type="button" class="btn-upload btn-upload--video" id="btn-select-video">Upload video</button>
+            <label class="btn-upload btn-upload--video">
+              Upload video
+              <input type="file" id="thread-video-file" />
+            </label>
             <button type="button" class="btn-upload btn-upload--gif" id="btn-select-gif" aria-expanded="false" aria-controls="gif-picker-panel">Search Giphy</button>
           </div>
-          <p class="thread-attach-note">Videos: MP4, MOV, or WebM up to 25 MB. Pick a file saved on this Mac — cloud-only OneDrive files can hang the chooser.</p>
+          <p class="thread-attach-note">Videos: MP4, MOV, or WebM up to 25 MB. Or drag a file onto the box below, or paste a direct https link.</p>
+          <div class="thread-drop-zone" id="thread-video-drop">Drop a video file here</div>
+          <input type="url" id="thread-video-url" class="thread-video-url" placeholder="Or paste an https video link (MP4, MOV, WebM)…" inputmode="url" autocomplete="off" />
           <div class="gif-picker-panel" id="gif-picker-panel">
             <div class="gif-search-row">
               <input type="search" id="gif-search-input" placeholder="Search Giphy…" autocomplete="off" aria-label="Search Giphy" />
@@ -1589,7 +1630,6 @@
           </div>
           <button type="submit" class="btn btn-primary" id="thread-submit" style="align-self:flex-start">Post</button>
         </form>
-        <input type="file" id="thread-video-file" class="thread-hidden-file-input" tabindex="-1" aria-hidden="true" />
       </div>
     </section>
 
@@ -2153,7 +2193,8 @@
         var textEl = document.getElementById("thread-text");
         var fileEl = document.getElementById("thread-image-file");
         var videoEl = document.getElementById("thread-video-file");
-        var btnSelectVideo = document.getElementById("btn-select-video");
+        var videoUrlEl = document.getElementById("thread-video-url");
+        var videoDropEl = document.getElementById("thread-video-drop");
         var gifUrlEl = document.getElementById("thread-gif-url");
         var btnSelectGif = document.getElementById("btn-select-gif");
         var gifPickerPanel = document.getElementById("gif-picker-panel");
@@ -2268,10 +2309,38 @@
           return "";
         }
 
-        function openVideoPicker() {
-          if (!videoEl) return;
-          videoEl.value = "";
-          videoEl.click();
+        function isAllowedVideoUrl(url) {
+          try {
+            var parsed = new URL(url);
+            if (parsed.protocol !== "https:") return false;
+            if (/\.(mp4|m4v|mov|webm)(\?|$)/i.test(parsed.pathname)) return true;
+            return parsed.hostname.indexOf("firebasestorage.googleapis.com") !== -1;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        function clearVideoUrlField() {
+          if (videoUrlEl) videoUrlEl.value = "";
+        }
+
+        function onVideoFileSelected(file) {
+          if (!file) return;
+          if (gifUrlEl) gifUrlEl.value = "";
+          if (fileEl) fileEl.value = "";
+          clearVideoUrlField();
+          if (selectedGifBtn) {
+            selectedGifBtn.classList.remove("is-selected");
+            selectedGifBtn = null;
+          }
+          if (gifPickerPanel) gifPickerPanel.classList.remove("is-visible");
+          try {
+            setPreview(attachVideoFile(file));
+            showToast("Video attached — tap Post");
+          } catch (err) {
+            if (videoEl) videoEl.value = "";
+            showToast(err.message || "Could not attach video");
+          }
         }
 
         function normalizeVideoFile(file) {
@@ -2367,7 +2436,13 @@
           if (media.kind === "video") {
             previewImg.hidden = true;
             previewImg.removeAttribute("src");
-            showVideoPreviewPlaceholder(media.fileName, media.blob && media.blob.size);
+            if (media.type === "url") {
+              var linkLabel = media.src || "Video link";
+              if (linkLabel.length > 52) linkLabel = linkLabel.slice(0, 49) + "…";
+              showVideoPreviewPlaceholder(linkLabel, 0);
+            } else {
+              showVideoPreviewPlaceholder(media.fileName, media.blob && media.blob.size);
+            }
           } else {
             if (previewVideoMeta) previewVideoMeta.hidden = true;
             if (previewVideoName) previewVideoName.textContent = "";
@@ -2383,6 +2458,7 @@
           if (fileEl) fileEl.value = "";
           if (videoEl) videoEl.value = "";
           if (gifUrlEl) gifUrlEl.value = "";
+          clearVideoUrlField();
           if (selectedGifBtn) {
             selectedGifBtn.classList.remove("is-selected");
             selectedGifBtn = null;
@@ -2433,6 +2509,7 @@
           if (selectedGifBtn) selectedGifBtn.classList.add("is-selected");
           if (fileEl) fileEl.value = "";
           if (videoEl) videoEl.value = "";
+          clearVideoUrlField();
           setPreview({
             type: "url",
             src: mediaUrl,
@@ -2818,6 +2895,7 @@
             if (!file) return;
             if (gifUrlEl) gifUrlEl.value = "";
             if (videoEl) videoEl.value = "";
+            clearVideoUrlField();
             if (selectedGifBtn) {
               selectedGifBtn.classList.remove("is-selected");
               selectedGifBtn = null;
@@ -2838,33 +2916,57 @@
 
         if (videoEl) {
           videoEl.addEventListener("change", function () {
-            var file = videoEl.files && videoEl.files[0];
-            if (!file) return;
-            if (gifUrlEl) gifUrlEl.value = "";
+            onVideoFileSelected(videoEl.files && videoEl.files[0]);
+          });
+        }
+
+        if (videoUrlEl) {
+          videoUrlEl.addEventListener("change", function () {
+            var value = videoUrlEl.value.trim();
+            if (!value) {
+              if (pendingMedia && pendingMedia.type === "url" && pendingMedia.kind === "video") clearPreview();
+              return;
+            }
+            if (!isAllowedVideoUrl(value)) {
+              showToast("Paste a direct https link to MP4, MOV, or WebM");
+              videoUrlEl.value = "";
+              return;
+            }
             if (fileEl) fileEl.value = "";
+            if (videoEl) videoEl.value = "";
+            if (gifUrlEl) gifUrlEl.value = "";
             if (selectedGifBtn) {
               selectedGifBtn.classList.remove("is-selected");
               selectedGifBtn = null;
             }
             if (gifPickerPanel) gifPickerPanel.classList.remove("is-visible");
-            try {
-              setPreview(attachVideoFile(file));
-              showToast("Video attached — tap Post");
-            } catch (err) {
-              videoEl.value = "";
-              showToast(err.message || "Could not attach video");
-            }
+            setPreview({
+              type: "url",
+              src: value,
+              kind: "video"
+            });
+            showToast("Video link attached — tap Post");
           });
         }
 
-        if (btnSelectVideo) {
-          btnSelectVideo.addEventListener("click", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            openVideoPicker();
-            if (/OneDrive/i.test(window.location.href)) {
-              showToast("Choose a video saved on this Mac, not cloud-only");
-            }
+        if (videoDropEl) {
+          ["dragenter", "dragover"].forEach(function (eventName) {
+            videoDropEl.addEventListener(eventName, function (event) {
+              event.preventDefault();
+              event.stopPropagation();
+              videoDropEl.classList.add("is-dragover");
+            });
+          });
+          ["dragleave", "drop"].forEach(function (eventName) {
+            videoDropEl.addEventListener(eventName, function (event) {
+              event.preventDefault();
+              event.stopPropagation();
+              videoDropEl.classList.remove("is-dragover");
+            });
+          });
+          videoDropEl.addEventListener("drop", function (event) {
+            var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+            onVideoFileSelected(file);
           });
         }
 
