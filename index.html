@@ -1122,7 +1122,27 @@
       background: rgba(255, 158, 200, 0.15);
     }
 
-    .btn-upload input { display: none; }
+    .btn-upload input {
+      display: none;
+    }
+
+    .thread-hidden-file-input {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      border: 0;
+      padding: 0;
+    }
+
+    .thread-attach-note {
+      margin: 0;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
 
     .btn-upload--image {
       background: rgba(255, 158, 200, 0.08);
@@ -1293,8 +1313,32 @@
     }
 
     .media-preview img[hidden],
-    .media-preview video[hidden] {
+    .media-preview video[hidden],
+    .media-preview-video-meta[hidden] {
       display: none;
+    }
+
+    .media-preview-video-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 1rem 0.85rem;
+      min-height: 72px;
+      justify-content: center;
+    }
+
+    .media-preview-video-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mint);
+    }
+
+    .media-preview-video-name {
+      font-size: 0.82rem;
+      color: var(--lavender-soft);
+      word-break: break-word;
     }
 
     .media-preview-clear {
@@ -1523,12 +1567,10 @@
               Upload photo
               <input type="file" id="thread-image-file" accept="image/jpeg,image/png,image/webp,image/avif" />
             </label>
-            <label class="btn-upload btn-upload--video">
-              Upload video
-              <input type="file" id="thread-video-file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" />
-            </label>
+            <button type="button" class="btn-upload btn-upload--video" id="btn-select-video">Upload video</button>
             <button type="button" class="btn-upload btn-upload--gif" id="btn-select-gif" aria-expanded="false" aria-controls="gif-picker-panel">Search Giphy</button>
           </div>
+          <p class="thread-attach-note">Videos: MP4, MOV, or WebM up to 25 MB. Pick a file saved on this Mac — cloud-only OneDrive files can hang the chooser.</p>
           <div class="gif-picker-panel" id="gif-picker-panel">
             <div class="gif-search-row">
               <input type="search" id="gif-search-input" placeholder="Search Giphy…" autocomplete="off" aria-label="Search Giphy" />
@@ -1540,10 +1582,14 @@
           <div class="media-preview" id="media-preview">
             <button type="button" class="media-preview-clear" id="media-preview-clear" aria-label="Remove attachment">×</button>
             <img id="media-preview-img" alt="Attachment preview" hidden />
-            <video id="media-preview-video" controls playsinline preload="metadata" hidden></video>
+            <div id="media-preview-video-meta" class="media-preview-video-meta" hidden>
+              <span class="media-preview-video-label">Video attached</span>
+              <span id="media-preview-video-name"></span>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary" id="thread-submit" style="align-self:flex-start">Post</button>
         </form>
+        <input type="file" id="thread-video-file" class="thread-hidden-file-input" tabindex="-1" aria-hidden="true" />
       </div>
     </section>
 
@@ -2107,6 +2153,7 @@
         var textEl = document.getElementById("thread-text");
         var fileEl = document.getElementById("thread-image-file");
         var videoEl = document.getElementById("thread-video-file");
+        var btnSelectVideo = document.getElementById("btn-select-video");
         var gifUrlEl = document.getElementById("thread-gif-url");
         var btnSelectGif = document.getElementById("btn-select-gif");
         var gifPickerPanel = document.getElementById("gif-picker-panel");
@@ -2116,7 +2163,8 @@
         var selectedGifBtn = null;
         var previewWrap = document.getElementById("media-preview");
         var previewImg = document.getElementById("media-preview-img");
-        var previewVideo = document.getElementById("media-preview-video");
+        var previewVideoMeta = document.getElementById("media-preview-video-meta");
+        var previewVideoName = document.getElementById("media-preview-video-name");
         var previewClear = document.getElementById("media-preview-clear");
         var listEl = document.getElementById("thread-list");
         var statusEl = document.getElementById("thread-status");
@@ -2208,19 +2256,63 @@
           return new Blob([bytes], { type: mime });
         }
 
-        function prepareVideo(file) {
-          if (ALLOWED_VIDEO_TYPES.indexOf(file.type) === -1) {
-            return Promise.reject(new Error("Use MP4, WebM, or MOV video"));
+        function inferVideoMime(file) {
+          if (file.type && ALLOWED_VIDEO_TYPES.indexOf(file.type) !== -1) {
+            return file.type;
           }
-          if (file.size > MAX_VIDEO_BYTES) {
-            return Promise.reject(new Error("Video must be under 25 MB"));
+          var name = (file.name || "").toLowerCase();
+          if (/\.(mp4|m4v)$/.test(name)) return "video/mp4";
+          if (/\.webm$/.test(name)) return "video/webm";
+          if (/\.mov$/.test(name)) return "video/quicktime";
+          if (/\.(avi|mkv)$/.test(name)) return "video/mp4";
+          return "";
+        }
+
+        function openVideoPicker() {
+          if (!videoEl) return;
+          videoEl.value = "";
+          videoEl.click();
+        }
+
+        function normalizeVideoFile(file) {
+          var mime = inferVideoMime(file);
+          if (!mime) return null;
+          if (!file.type || file.type !== mime) {
+            file.__countdownMime = mime;
           }
-          return Promise.resolve({
+          return file;
+        }
+
+        function showVideoPreviewPlaceholder(fileName, fileSize) {
+          if (previewVideoMeta) previewVideoMeta.hidden = false;
+          if (previewVideoName) {
+            var label = fileName || "Video attached";
+            if (fileSize) {
+              var mb = (fileSize / (1024 * 1024)).toFixed(1);
+              label += " · " + mb + " MB";
+            }
+            previewVideoName.textContent = label;
+          }
+        }
+
+        function attachVideoFile(file) {
+          if (!file) return;
+          if (!file.size) {
+            throw new Error("Video not ready — if it's in OneDrive, wait for sync then try again");
+          }
+          var normalized = normalizeVideoFile(file);
+          if (!normalized) {
+            throw new Error("Use MP4, WebM, or MOV video");
+          }
+          if (normalized.size > MAX_VIDEO_BYTES) {
+            throw new Error("Video must be under 25 MB");
+          }
+          return {
             type: "upload",
-            blob: file,
-            previewUrl: URL.createObjectURL(file),
+            blob: normalized,
+            fileName: normalized.name || "video.mp4",
             kind: "video"
-          });
+          };
         }
 
         function compressImage(file) {
@@ -2261,41 +2353,24 @@
           });
         }
 
-        function revokePreviewUrl(media) {
-          if (media && media.previewUrl) {
-            URL.revokeObjectURL(media.previewUrl);
-          }
-        }
-
         function setPreview(media) {
-          revokePreviewUrl(pendingMedia);
           pendingMedia = media;
           pendingBlob = media && media.blob ? media.blob : null;
           if (!media) {
             previewWrap.classList.remove("is-visible");
             previewImg.hidden = true;
             previewImg.removeAttribute("src");
-            if (previewVideo) {
-              previewVideo.hidden = true;
-              previewVideo.removeAttribute("src");
-              previewVideo.load();
-            }
+            if (previewVideoMeta) previewVideoMeta.hidden = true;
+            if (previewVideoName) previewVideoName.textContent = "";
             return;
           }
           if (media.kind === "video") {
             previewImg.hidden = true;
             previewImg.removeAttribute("src");
-            if (previewVideo) {
-              previewVideo.hidden = false;
-              previewVideo.src = media.previewUrl || media.src;
-              previewVideo.load();
-            }
+            showVideoPreviewPlaceholder(media.fileName, media.blob && media.blob.size);
           } else {
-            if (previewVideo) {
-              previewVideo.hidden = true;
-              previewVideo.removeAttribute("src");
-              previewVideo.load();
-            }
+            if (previewVideoMeta) previewVideoMeta.hidden = true;
+            if (previewVideoName) previewVideoName.textContent = "";
             previewImg.hidden = false;
             previewImg.src = media.type === "url" ? media.src : media.dataUrl;
           }
@@ -2303,7 +2378,6 @@
         }
 
         function clearPreview() {
-          revokePreviewUrl(pendingMedia);
           pendingMedia = null;
           pendingBlob = null;
           if (fileEl) fileEl.value = "";
@@ -2316,11 +2390,8 @@
           previewWrap.classList.remove("is-visible");
           previewImg.hidden = true;
           previewImg.removeAttribute("src");
-          if (previewVideo) {
-            previewVideo.hidden = true;
-            previewVideo.removeAttribute("src");
-            previewVideo.load();
-          }
+          if (previewVideoMeta) previewVideoMeta.hidden = true;
+          if (previewVideoName) previewVideoName.textContent = "";
         }
 
         function getGiphyApiKey() {
@@ -2629,6 +2700,18 @@
         }
 
         function initFirebase() {
+          if (window.location.protocol === "file:") {
+            showSetupBanner(
+              "Comments and video upload need the hosted page — open " +
+              "<a href='https://fongathan.github.io/countdown-july-9/' target='_blank' rel='noopener noreferrer'>fongathan.github.io/countdown-july-9</a> " +
+              "instead of this local file copy."
+            );
+            submitBtn.disabled = true;
+            setThreadStatus(false, "Open hosted page");
+            listEl.innerHTML = '<p class="thread-empty">Use the GitHub Pages link above for comments, GIF search, and video upload.</p>';
+            return;
+          }
+
           var cfg = window.COUNTDOWN_FIREBASE || {};
           if (!cfg.projectId) {
             showSetupBanner(
@@ -2703,45 +2786,55 @@
 
         function uploadMedia(blob, kind) {
           var ext = "jpg";
-          var contentType = blob.type || "image/jpeg";
+          var contentType = blob.type || blob.__countdownMime || "image/jpeg";
           if (kind === "gif") {
             ext = "gif";
           } else if (kind === "video") {
-            if (blob.type === "video/webm") ext = "webm";
-            else if (blob.type === "video/quicktime") ext = "mov";
+            contentType = blob.type || blob.__countdownMime || "video/mp4";
+            if (contentType === "video/webm") ext = "webm";
+            else if (contentType === "video/quicktime") ext = "mov";
             else ext = "mp4";
-            contentType = blob.type || "video/mp4";
           }
           var path = "july9-comments/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
           var ref = storage.ref(path);
-          return ref.put(blob, { contentType: contentType }).then(function () {
+          var uploadTask = ref.put(blob, { contentType: contentType });
+          var uploadPromise = uploadTask.then(function () {
             return ref.getDownloadURL();
           });
+          var timeoutMs = kind === "video" ? 180000 : 60000;
+          var timeoutPromise = new Promise(function (_, reject) {
+            setTimeout(function () {
+              reject(new Error("Upload timed out — try a smaller video or check your connection"));
+            }, timeoutMs);
+          });
+          return Promise.race([uploadPromise, timeoutPromise]);
         }
 
         previewClear.addEventListener("click", clearPreview);
 
-        fileEl.addEventListener("change", function () {
-          var file = fileEl.files && fileEl.files[0];
-          if (!file) return;
-          if (gifUrlEl) gifUrlEl.value = "";
-          if (videoEl) videoEl.value = "";
-          if (selectedGifBtn) {
-            selectedGifBtn.classList.remove("is-selected");
-            selectedGifBtn = null;
-          }
-          compressImage(file).then(function (result) {
-            setPreview({
-              type: "upload",
-              dataUrl: result.dataUrl,
-              blob: result.blob,
-              kind: "photo"
+        if (fileEl) {
+          fileEl.addEventListener("change", function () {
+            var file = fileEl.files && fileEl.files[0];
+            if (!file) return;
+            if (gifUrlEl) gifUrlEl.value = "";
+            if (videoEl) videoEl.value = "";
+            if (selectedGifBtn) {
+              selectedGifBtn.classList.remove("is-selected");
+              selectedGifBtn = null;
+            }
+            compressImage(file).then(function (result) {
+              setPreview({
+                type: "upload",
+                dataUrl: result.dataUrl,
+                blob: result.blob,
+                kind: "photo"
+              });
+            }).catch(function (err) {
+              fileEl.value = "";
+              showToast(err.message || "Could not attach file");
             });
-          }).catch(function (err) {
-            fileEl.value = "";
-            showToast(err.message || "Could not attach file");
           });
-        });
+        }
 
         if (videoEl) {
           videoEl.addEventListener("change", function () {
@@ -2754,13 +2847,24 @@
               selectedGifBtn = null;
             }
             if (gifPickerPanel) gifPickerPanel.classList.remove("is-visible");
-            prepareVideo(file).then(function (result) {
-              setPreview(result);
+            try {
+              setPreview(attachVideoFile(file));
               showToast("Video attached — tap Post");
-            }).catch(function (err) {
+            } catch (err) {
               videoEl.value = "";
               showToast(err.message || "Could not attach video");
-            });
+            }
+          });
+        }
+
+        if (btnSelectVideo) {
+          btnSelectVideo.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            openVideoPicker();
+            if (/OneDrive/i.test(window.location.href)) {
+              showToast("Choose a video saved on this Mac, not cloud-only");
+            }
           });
         }
 
