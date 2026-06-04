@@ -1059,6 +1059,58 @@
       padding: 0.85rem 1rem 1rem;
       border-top: 1px solid var(--card-border);
       background: rgba(13, 10, 20, 0.45);
+      position: relative;
+    }
+
+    .thread-video-file-input {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    .upload-progress {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .upload-progress[hidden] {
+      display: none !important;
+    }
+
+    .upload-progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .upload-progress-meta strong {
+      color: var(--mint);
+      font-weight: 600;
+    }
+
+    .upload-progress-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+
+    .upload-progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--mint), var(--gold), var(--lover-pink));
+      transition: width 0.2s ease;
     }
 
     .thread-composer-row {
@@ -1159,6 +1211,8 @@
       border-style: dashed;
       color: var(--text-muted);
       transition: border-color 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+      display: block;
     }
 
     .thread-drop-zone.is-dragover {
@@ -1183,22 +1237,9 @@
     }
 
     .btn-upload--video {
-      position: relative;
-      overflow: hidden;
       border-style: solid;
       border-color: rgba(158, 228, 200, 0.35);
       background: rgba(158, 228, 200, 0.1);
-    }
-
-    .btn-upload--video > input[type="file"] {
-      display: block;
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-      font-size: 0;
     }
 
     .btn-upload--video:hover {
@@ -1591,6 +1632,7 @@
         <div class="thread-list" id="thread-list" aria-live="polite"></div>
 
         <form class="thread-composer" id="thread-form" novalidate>
+          <input type="file" id="thread-video-file" class="thread-video-file-input" tabindex="-1" aria-hidden="true" />
           <div class="thread-composer-row">
             <div class="thread-item-avatar" id="composer-avatar" aria-hidden="true">?</div>
             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0.55rem">
@@ -1603,14 +1645,11 @@
               Upload photo
               <input type="file" id="thread-image-file" accept="image/jpeg,image/png,image/webp,image/avif" />
             </label>
-            <label class="btn-upload btn-upload--video">
-              Upload video
-              <input type="file" id="thread-video-file" />
-            </label>
+            <label for="thread-video-file" class="btn-upload btn-upload--video">Upload video</label>
             <button type="button" class="btn-upload btn-upload--gif" id="btn-select-gif" aria-expanded="false" aria-controls="gif-picker-panel">Search Giphy</button>
           </div>
-          <p class="thread-attach-note">Videos: MP4, MOV, or WebM up to 25 MB. Or drag a file onto the box below, or paste a direct https link.</p>
-          <div class="thread-drop-zone" id="thread-video-drop">Drop a video file here</div>
+          <p class="thread-attach-note">Videos: MP4, MOV, or WebM up to 25 MB. Click Upload video, drop a file below, or paste a direct https link.</p>
+          <label for="thread-video-file" class="thread-drop-zone" id="thread-video-drop">Drop a video file here · or click to browse</label>
           <input type="url" id="thread-video-url" class="thread-video-url" placeholder="Or paste an https video link (MP4, MOV, WebM)…" inputmode="url" autocomplete="off" />
           <div class="gif-picker-panel" id="gif-picker-panel">
             <div class="gif-search-row">
@@ -1626,6 +1665,15 @@
             <div id="media-preview-video-meta" class="media-preview-video-meta" hidden>
               <span class="media-preview-video-label">Video attached</span>
               <span id="media-preview-video-name"></span>
+            </div>
+          </div>
+          <div class="upload-progress" id="upload-progress" hidden>
+            <div class="upload-progress-meta">
+              <strong id="upload-progress-label">Uploading…</strong>
+              <span id="upload-progress-pct">0%</span>
+            </div>
+            <div class="upload-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="upload-progress-aria">
+              <div class="upload-progress-fill" id="upload-progress-fill"></div>
             </div>
           </div>
           <button type="submit" class="btn btn-primary" id="thread-submit" style="align-self:flex-start">Post</button>
@@ -2213,6 +2261,11 @@
         var setupBanner = document.getElementById("thread-setup-banner");
         var composerAvatar = document.getElementById("composer-avatar");
         var submitBtn = document.getElementById("thread-submit");
+        var uploadProgressEl = document.getElementById("upload-progress");
+        var uploadProgressFill = document.getElementById("upload-progress-fill");
+        var uploadProgressPct = document.getElementById("upload-progress-pct");
+        var uploadProgressLabel = document.getElementById("upload-progress-label");
+        var uploadProgressAria = document.getElementById("upload-progress-aria");
 
         var pendingMedia = null;
         var pendingBlob = null;
@@ -2238,6 +2291,16 @@
         composerAvatar.textContent = authorEl.value.trim()
           ? authorEl.value.trim().charAt(0).toUpperCase()
           : "?";
+
+        function setUploadProgress(visible, pct, label) {
+          if (!uploadProgressEl) return;
+          uploadProgressEl.hidden = !visible;
+          var safePct = Math.max(0, Math.min(100, Math.round(pct || 0)));
+          if (uploadProgressFill) uploadProgressFill.style.width = safePct + "%";
+          if (uploadProgressPct) uploadProgressPct.textContent = safePct + "%";
+          if (uploadProgressLabel && label) uploadProgressLabel.textContent = label;
+          if (uploadProgressAria) uploadProgressAria.setAttribute("aria-valuenow", String(safePct));
+        }
 
         function escapeHtml(str) {
           return String(str)
@@ -2875,16 +2938,52 @@
           var path = "july9-comments/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
           var ref = storage.ref(path);
           var uploadTask = ref.put(blob, { contentType: contentType });
-          var uploadPromise = uploadTask.then(function () {
-            return ref.getDownloadURL();
-          });
           var timeoutMs = kind === "video" ? 180000 : 60000;
-          var timeoutPromise = new Promise(function (_, reject) {
-            setTimeout(function () {
+          var progressLabel = kind === "video" ? "Uploading video…" : "Uploading file…";
+
+          return new Promise(function (resolve, reject) {
+            var settled = false;
+            var timeoutId = setTimeout(function () {
+              if (settled) return;
+              settled = true;
+              setUploadProgress(false, 0);
               reject(new Error("Upload timed out — try a smaller video or check your connection"));
             }, timeoutMs);
+
+            function finish(err, url) {
+              if (settled) return;
+              settled = true;
+              clearTimeout(timeoutId);
+              if (err) {
+                setUploadProgress(false, 0);
+                reject(err);
+                return;
+              }
+              resolve(url);
+            }
+
+            setUploadProgress(true, 0, progressLabel);
+
+            uploadTask.on(
+              "state_changed",
+              function (snapshot) {
+                var total = snapshot.totalBytes;
+                var transferred = snapshot.bytesTransferred;
+                if (total > 0) {
+                  setUploadProgress(true, (transferred / total) * 100, progressLabel);
+                }
+              },
+              function (error) {
+                finish(error);
+              },
+              function () {
+                ref.getDownloadURL().then(function (url) {
+                  setUploadProgress(true, 100, "Upload complete");
+                  finish(null, url);
+                }).catch(finish);
+              }
+            );
           });
-          return Promise.race([uploadPromise, timeoutPromise]);
         }
 
         previewClear.addEventListener("click", clearPreview);
@@ -3010,9 +3109,6 @@
           }
 
           submitBtn.disabled = true;
-          if (pendingMedia && pendingMedia.kind === "video") {
-            showToast("Uploading video…");
-          }
 
           var mediaPromise = Promise.resolve({ url: "", kind: "" });
           if (pendingMedia) {
@@ -3029,6 +3125,7 @@
           }
 
           mediaPromise.then(function (media) {
+            setUploadProgress(true, 100, "Saving comment…");
             return db.collection("july9-comments").add({
               author: author,
               text: text,
@@ -3050,6 +3147,7 @@
             }
             showToast(msg);
           }).finally(function () {
+            setUploadProgress(false, 0);
             submitBtn.disabled = false;
           });
         });
