@@ -15,7 +15,7 @@
  *     allow read: if true;
  *     allow write: if request.resource.size < 25 * 1024 * 1024
  *       && (request.resource.contentType.matches('image/.*')
- *           || request.resource.contentType.matches('video/(mp4|webm|quicktime)'));
+ *           || request.resource.contentType.matches('video/.*'));
  *   }
  */
 window.COUNTDOWN_FIREBASE = {

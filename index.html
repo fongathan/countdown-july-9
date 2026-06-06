@@ -2924,65 +2924,142 @@
           }
         }
 
-        function uploadMedia(blob, kind) {
-          var ext = "jpg";
-          var contentType = blob.type || blob.__countdownMime || "image/jpeg";
-          if (kind === "gif") {
-            ext = "gif";
-          } else if (kind === "video") {
-            contentType = blob.type || blob.__countdownMime || "video/mp4";
-            if (contentType === "video/webm") ext = "webm";
-            else if (contentType === "video/quicktime") ext = "mov";
-            else ext = "mp4";
+        function uploadContentType(blob, kind) {
+          if (kind === "gif") return "image/gif";
+          if (kind === "video") {
+            var videoType = blob.type || blob.__countdownMime || "video/mp4";
+            return videoType.indexOf("video/") === 0 ? videoType : "video/mp4";
           }
-          var path = "july9-comments/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
-          var ref = storage.ref(path);
-          var uploadTask = ref.put(blob, { contentType: contentType });
-          var timeoutMs = kind === "video" ? 180000 : 60000;
-          var progressLabel = kind === "video" ? "Uploading video…" : "Uploading file…";
+          return blob.type || "image/jpeg";
+        }
 
-          return new Promise(function (resolve, reject) {
-            var settled = false;
-            var timeoutId = setTimeout(function () {
-              if (settled) return;
-              settled = true;
-              setUploadProgress(false, 0);
-              reject(new Error("Upload timed out — try a smaller video or check your connection"));
-            }, timeoutMs);
+        function uploadExtension(contentType, kind) {
+          if (kind === "gif") return "gif";
+          if (kind === "video") {
+            if (contentType === "video/webm") return "webm";
+            if (contentType === "video/quicktime") return "mov";
+            return "mp4";
+          }
+          return "jpg";
+        }
 
-            function finish(err, url) {
-              if (settled) return;
-              settled = true;
-              clearTimeout(timeoutId);
-              if (err) {
-                setUploadProgress(false, 0);
-                reject(err);
-                return;
-              }
-              resolve(url);
-            }
-
-            setUploadProgress(true, 0, progressLabel);
-
-            uploadTask.on(
-              "state_changed",
-              function (snapshot) {
-                var total = snapshot.totalBytes;
-                var transferred = snapshot.bytesTransferred;
-                if (total > 0) {
-                  setUploadProgress(true, (transferred / total) * 100, progressLabel);
-                }
-              },
-              function (error) {
-                finish(error);
-              },
-              function () {
-                ref.getDownloadURL().then(function (url) {
-                  setUploadProgress(true, 100, "Upload complete");
-                  finish(null, url);
-                }).catch(finish);
-              }
+        function formatStorageError(error, kind) {
+          if (!error) return new Error("Upload failed");
+          var code = error.code || "";
+          if (code === "storage/unauthorized" || code === "storage/permission-denied") {
+            return new Error(
+              kind === "video"
+                ? "Video blocked — Firebase Console → Storage → Rules: allow video under 25 MB, then Publish"
+                : "Upload blocked — check Firebase Storage rules"
             );
+          }
+          if (code === "storage/canceled") return new Error("Upload canceled");
+          if (error.message) return new Error(error.message);
+          return new Error("Upload failed — check connection and try again");
+        }
+
+        function prepareUploadPayload(blob, contentType, kind) {
+          if (kind !== "video") {
+            if (!blob.type || blob.type !== contentType) {
+              try {
+                return Promise.resolve(blob.slice(0, blob.size, contentType));
+              } catch (e) {
+                return Promise.resolve(blob);
+              }
+            }
+            return Promise.resolve(blob);
+          }
+          setUploadProgress(true, 0, "Preparing video…");
+          return new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+            reader.onload = function () {
+              resolve(new Blob([reader.result], { type: contentType }));
+            };
+            reader.onerror = function () {
+              reject(new Error("Could not read video — download it from OneDrive/iCloud first, then try again"));
+            };
+            reader.onabort = function () {
+              reject(new Error("Video read canceled"));
+            };
+            reader.readAsArrayBuffer(blob);
+          });
+        }
+
+        function uploadMedia(blob, kind) {
+          var contentType = uploadContentType(blob, kind);
+          var ext = uploadExtension(contentType, kind);
+          var progressLabel = kind === "video" ? "Uploading video…" : "Uploading file…";
+          var timeoutMs = kind === "video" ? 180000 : 60000;
+
+          return prepareUploadPayload(blob, contentType, kind).then(function (payload) {
+            var path = "july9-comments/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
+            var ref = storage.ref(path);
+            var uploadTask = ref.put(payload, { contentType: contentType });
+
+            return new Promise(function (resolve, reject) {
+              var settled = false;
+              var lastPct = 0;
+              var uploadTaskRef = uploadTask;
+              var timeoutId = setTimeout(function () {
+                if (settled) return;
+                settled = true;
+                try { uploadTaskRef.cancel(); } catch (e) { /* ignore */ }
+                setUploadProgress(false, 0);
+                reject(new Error("Upload timed out — try a smaller video or check your connection"));
+              }, timeoutMs);
+              var stallId = setTimeout(function () {
+                if (settled || lastPct > 0) return;
+                settled = true;
+                clearTimeout(timeoutId);
+                try { uploadTaskRef.cancel(); } catch (e) { /* ignore */ }
+                setUploadProgress(false, 0);
+                reject(new Error(
+                  "Upload stuck at 0% — publish Storage rules in Firebase Console (25 MB + video types) or check network"
+                ));
+              }, kind === "video" ? 25000 : 15000);
+
+              function finish(err, url) {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timeoutId);
+                clearTimeout(stallId);
+                if (err) {
+                  setUploadProgress(false, 0);
+                  reject(err);
+                  return;
+                }
+                resolve(url);
+              }
+
+              setUploadProgress(true, 0, progressLabel);
+
+              uploadTask.on(
+                "state_changed",
+                function (snapshot) {
+                  var total = snapshot.totalBytes;
+                  var transferred = snapshot.bytesTransferred;
+                  if (total > 0) {
+                    lastPct = (transferred / total) * 100;
+                    setUploadProgress(true, lastPct, progressLabel);
+                    if (lastPct > 0) clearTimeout(stallId);
+                  } else if (snapshot.state === "running") {
+                    setUploadProgress(true, 1, progressLabel);
+                  }
+                },
+                function (error) {
+                  finish(formatStorageError(error, kind));
+                }
+              );
+
+              uploadTask.then(function () {
+                return ref.getDownloadURL();
+              }).then(function (url) {
+                setUploadProgress(true, 100, "Upload complete");
+                finish(null, url);
+              }).catch(function (error) {
+                finish(formatStorageError(error, kind));
+              });
+            });
           });
         }
 
