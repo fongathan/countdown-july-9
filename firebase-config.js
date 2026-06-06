@@ -13,9 +13,8 @@
  * Storage rules (Console → Storage → Rules):
  *   match /july9-comments/{fileName} {
  *     allow read: if true;
- *     allow write: if request.resource.size < 25 * 1024 * 1024
- *       && (request.resource.contentType.matches('image/.*')
- *           || request.resource.contentType.matches('video/.*'));
+ *     allow write: if request.resource.size < 3 * 1024 * 1024
+ *       && request.resource.contentType.matches('image/.*');
  *   }
  */
 window.COUNTDOWN_FIREBASE = {

@@ -1062,15 +1062,6 @@
       position: relative;
     }
 
-    .thread-video-file-input {
-      position: absolute;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      overflow: hidden;
-    }
-
     .upload-progress {
       display: flex;
       flex-direction: column;
@@ -1178,49 +1169,6 @@
       display: none;
     }
 
-    .thread-attach-note {
-      margin: 0;
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    .thread-video-url,
-    .thread-drop-zone {
-      width: 100%;
-      font-family: inherit;
-      font-size: 0.82rem;
-      border-radius: 0.7rem;
-      border: 1px solid var(--card-border);
-      background: rgba(13, 10, 20, 0.88);
-      color: var(--lavender-soft);
-    }
-
-    .thread-video-url {
-      padding: 0.6rem 0.8rem;
-    }
-
-    .thread-video-url:focus {
-      outline: none;
-      border-color: var(--mint);
-    }
-
-    .thread-drop-zone {
-      padding: 0.75rem 0.85rem;
-      text-align: center;
-      border-style: dashed;
-      color: var(--text-muted);
-      transition: border-color 0.2s ease, background 0.2s ease;
-      cursor: pointer;
-      display: block;
-    }
-
-    .thread-drop-zone.is-dragover {
-      border-color: var(--mint);
-      background: rgba(158, 228, 200, 0.08);
-      color: var(--lavender-soft);
-    }
-
     .btn-upload--image {
       background: rgba(255, 158, 200, 0.08);
     }
@@ -1234,17 +1182,6 @@
     .btn-upload--gif:hover {
       border-color: var(--sky);
       background: rgba(142, 200, 255, 0.18);
-    }
-
-    .btn-upload--video {
-      border-style: solid;
-      border-color: rgba(158, 228, 200, 0.35);
-      background: rgba(158, 228, 200, 0.1);
-    }
-
-    .btn-upload--video:hover {
-      border-color: var(--mint);
-      background: rgba(158, 228, 200, 0.18);
     }
 
     .gif-picker-panel {
@@ -1376,46 +1313,15 @@
 
     .media-preview.is-visible { display: block; }
 
-    .media-preview img,
-    .media-preview video {
+    .media-preview img {
       display: block;
       width: 100%;
       max-height: 180px;
       object-fit: cover;
     }
 
-    .media-preview video {
-      object-fit: contain;
-      background: #000;
-    }
-
-    .media-preview img[hidden],
-    .media-preview video[hidden],
-    .media-preview-video-meta[hidden] {
+    .media-preview img[hidden] {
       display: none;
-    }
-
-    .media-preview-video-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      padding: 1rem 0.85rem;
-      min-height: 72px;
-      justify-content: center;
-    }
-
-    .media-preview-video-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--mint);
-    }
-
-    .media-preview-video-name {
-      font-size: 0.82rem;
-      color: var(--lavender-soft);
-      word-break: break-word;
     }
 
     .media-preview-clear {
@@ -1632,7 +1538,6 @@
         <div class="thread-list" id="thread-list" aria-live="polite"></div>
 
         <form class="thread-composer" id="thread-form" novalidate>
-          <input type="file" id="thread-video-file" class="thread-video-file-input" tabindex="-1" aria-hidden="true" />
           <div class="thread-composer-row">
             <div class="thread-item-avatar" id="composer-avatar" aria-hidden="true">?</div>
             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0.55rem">
@@ -1645,12 +1550,8 @@
               Upload photo
               <input type="file" id="thread-image-file" accept="image/jpeg,image/png,image/webp,image/avif" />
             </label>
-            <label for="thread-video-file" class="btn-upload btn-upload--video">Upload video</label>
             <button type="button" class="btn-upload btn-upload--gif" id="btn-select-gif" aria-expanded="false" aria-controls="gif-picker-panel">Search Giphy</button>
           </div>
-          <p class="thread-attach-note">Videos: MP4, MOV, or WebM up to 25 MB. Click Upload video, drop a file below, or paste a direct https link.</p>
-          <label for="thread-video-file" class="thread-drop-zone" id="thread-video-drop">Drop a video file here · or click to browse</label>
-          <input type="url" id="thread-video-url" class="thread-video-url" placeholder="Or paste an https video link (MP4, MOV, WebM)…" inputmode="url" autocomplete="off" />
           <div class="gif-picker-panel" id="gif-picker-panel">
             <div class="gif-search-row">
               <input type="search" id="gif-search-input" placeholder="Search Giphy…" autocomplete="off" aria-label="Search Giphy" />
@@ -1662,10 +1563,6 @@
           <div class="media-preview" id="media-preview">
             <button type="button" class="media-preview-clear" id="media-preview-clear" aria-label="Remove attachment">×</button>
             <img id="media-preview-img" alt="Attachment preview" hidden />
-            <div id="media-preview-video-meta" class="media-preview-video-meta" hidden>
-              <span class="media-preview-video-label">Video attached</span>
-              <span id="media-preview-video-name"></span>
-            </div>
           </div>
           <div class="upload-progress" id="upload-progress" hidden>
             <div class="upload-progress-meta">
@@ -2232,17 +2129,12 @@
       (function initLiveThread() {
         var CLIENT_KEY = "july9-thread-client";
         var MAX_FILE_BYTES = 1572864;
-        var MAX_VIDEO_BYTES = 25 * 1024 * 1024;
         var MAX_WIDTH = 900;
-        var ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 
         var form = document.getElementById("thread-form");
         var authorEl = document.getElementById("thread-author");
         var textEl = document.getElementById("thread-text");
         var fileEl = document.getElementById("thread-image-file");
-        var videoEl = document.getElementById("thread-video-file");
-        var videoUrlEl = document.getElementById("thread-video-url");
-        var videoDropEl = document.getElementById("thread-video-drop");
         var gifUrlEl = document.getElementById("thread-gif-url");
         var btnSelectGif = document.getElementById("btn-select-gif");
         var gifPickerPanel = document.getElementById("gif-picker-panel");
@@ -2252,8 +2144,6 @@
         var selectedGifBtn = null;
         var previewWrap = document.getElementById("media-preview");
         var previewImg = document.getElementById("media-preview-img");
-        var previewVideoMeta = document.getElementById("media-preview-video-meta");
-        var previewVideoName = document.getElementById("media-preview-video-name");
         var previewClear = document.getElementById("media-preview-clear");
         var listEl = document.getElementById("thread-list");
         var statusEl = document.getElementById("thread-status");
@@ -2360,93 +2250,6 @@
           return new Blob([bytes], { type: mime });
         }
 
-        function inferVideoMime(file) {
-          if (file.type && ALLOWED_VIDEO_TYPES.indexOf(file.type) !== -1) {
-            return file.type;
-          }
-          var name = (file.name || "").toLowerCase();
-          if (/\.(mp4|m4v)$/.test(name)) return "video/mp4";
-          if (/\.webm$/.test(name)) return "video/webm";
-          if (/\.mov$/.test(name)) return "video/quicktime";
-          if (/\.(avi|mkv)$/.test(name)) return "video/mp4";
-          return "";
-        }
-
-        function isAllowedVideoUrl(url) {
-          try {
-            var parsed = new URL(url);
-            if (parsed.protocol !== "https:") return false;
-            if (/\.(mp4|m4v|mov|webm)(\?|$)/i.test(parsed.pathname)) return true;
-            return parsed.hostname.indexOf("firebasestorage.googleapis.com") !== -1;
-          } catch (e) {
-            return false;
-          }
-        }
-
-        function clearVideoUrlField() {
-          if (videoUrlEl) videoUrlEl.value = "";
-        }
-
-        function onVideoFileSelected(file) {
-          if (!file) return;
-          if (gifUrlEl) gifUrlEl.value = "";
-          if (fileEl) fileEl.value = "";
-          clearVideoUrlField();
-          if (selectedGifBtn) {
-            selectedGifBtn.classList.remove("is-selected");
-            selectedGifBtn = null;
-          }
-          if (gifPickerPanel) gifPickerPanel.classList.remove("is-visible");
-          try {
-            setPreview(attachVideoFile(file));
-            showToast("Video attached — tap Post");
-          } catch (err) {
-            if (videoEl) videoEl.value = "";
-            showToast(err.message || "Could not attach video");
-          }
-        }
-
-        function normalizeVideoFile(file) {
-          var mime = inferVideoMime(file);
-          if (!mime) return null;
-          if (!file.type || file.type !== mime) {
-            file.__countdownMime = mime;
-          }
-          return file;
-        }
-
-        function showVideoPreviewPlaceholder(fileName, fileSize) {
-          if (previewVideoMeta) previewVideoMeta.hidden = false;
-          if (previewVideoName) {
-            var label = fileName || "Video attached";
-            if (fileSize) {
-              var mb = (fileSize / (1024 * 1024)).toFixed(1);
-              label += " · " + mb + " MB";
-            }
-            previewVideoName.textContent = label;
-          }
-        }
-
-        function attachVideoFile(file) {
-          if (!file) return;
-          if (!file.size) {
-            throw new Error("Video not ready — if it's in OneDrive, wait for sync then try again");
-          }
-          var normalized = normalizeVideoFile(file);
-          if (!normalized) {
-            throw new Error("Use MP4, WebM, or MOV video");
-          }
-          if (normalized.size > MAX_VIDEO_BYTES) {
-            throw new Error("Video must be under 25 MB");
-          }
-          return {
-            type: "upload",
-            blob: normalized,
-            fileName: normalized.name || "video.mp4",
-            kind: "video"
-          };
-        }
-
         function compressImage(file) {
           if (file.type === "image/gif") {
             return Promise.reject(new Error("Use Search Giphy for animated GIFs"));
@@ -2492,26 +2295,10 @@
             previewWrap.classList.remove("is-visible");
             previewImg.hidden = true;
             previewImg.removeAttribute("src");
-            if (previewVideoMeta) previewVideoMeta.hidden = true;
-            if (previewVideoName) previewVideoName.textContent = "";
             return;
           }
-          if (media.kind === "video") {
-            previewImg.hidden = true;
-            previewImg.removeAttribute("src");
-            if (media.type === "url") {
-              var linkLabel = media.src || "Video link";
-              if (linkLabel.length > 52) linkLabel = linkLabel.slice(0, 49) + "…";
-              showVideoPreviewPlaceholder(linkLabel, 0);
-            } else {
-              showVideoPreviewPlaceholder(media.fileName, media.blob && media.blob.size);
-            }
-          } else {
-            if (previewVideoMeta) previewVideoMeta.hidden = true;
-            if (previewVideoName) previewVideoName.textContent = "";
-            previewImg.hidden = false;
-            previewImg.src = media.type === "url" ? media.src : media.dataUrl;
-          }
+          previewImg.hidden = false;
+          previewImg.src = media.type === "url" ? media.src : media.dataUrl;
           previewWrap.classList.add("is-visible");
         }
 
@@ -2519,9 +2306,7 @@
           pendingMedia = null;
           pendingBlob = null;
           if (fileEl) fileEl.value = "";
-          if (videoEl) videoEl.value = "";
           if (gifUrlEl) gifUrlEl.value = "";
-          clearVideoUrlField();
           if (selectedGifBtn) {
             selectedGifBtn.classList.remove("is-selected");
             selectedGifBtn = null;
@@ -2529,8 +2314,6 @@
           previewWrap.classList.remove("is-visible");
           previewImg.hidden = true;
           previewImg.removeAttribute("src");
-          if (previewVideoMeta) previewVideoMeta.hidden = true;
-          if (previewVideoName) previewVideoName.textContent = "";
         }
 
         function getGiphyApiKey() {
@@ -2571,8 +2354,6 @@
           selectedGifBtn = btnEl || null;
           if (selectedGifBtn) selectedGifBtn.classList.add("is-selected");
           if (fileEl) fileEl.value = "";
-          if (videoEl) videoEl.value = "";
-          clearVideoUrlField();
           setPreview({
             type: "url",
             src: mediaUrl,
@@ -2842,13 +2623,13 @@
         function initFirebase() {
           if (window.location.protocol === "file:") {
             showSetupBanner(
-              "Comments and video upload need the hosted page — open " +
+              "Comments need the hosted page — open " +
               "<a href='https://fongathan.github.io/countdown-july-9/' target='_blank' rel='noopener noreferrer'>fongathan.github.io/countdown-july-9</a> " +
               "instead of this local file copy."
             );
             submitBtn.disabled = true;
             setThreadStatus(false, "Open hosted page");
-            listEl.innerHTML = '<p class="thread-empty">Use the GitHub Pages link above for comments, GIF search, and video upload.</p>';
+            listEl.innerHTML = '<p class="thread-empty">Use the GitHub Pages link above for comments and GIF search.</p>';
             return;
           }
 
@@ -2926,72 +2707,41 @@
 
         function uploadContentType(blob, kind) {
           if (kind === "gif") return "image/gif";
-          if (kind === "video") {
-            var videoType = blob.type || blob.__countdownMime || "video/mp4";
-            return videoType.indexOf("video/") === 0 ? videoType : "video/mp4";
-          }
           return blob.type || "image/jpeg";
         }
 
-        function uploadExtension(contentType, kind) {
-          if (kind === "gif") return "gif";
-          if (kind === "video") {
-            if (contentType === "video/webm") return "webm";
-            if (contentType === "video/quicktime") return "mov";
-            return "mp4";
-          }
-          return "jpg";
+        function uploadExtension(kind) {
+          return kind === "gif" ? "gif" : "jpg";
         }
 
-        function formatStorageError(error, kind) {
+        function formatStorageError(error) {
           if (!error) return new Error("Upload failed");
           var code = error.code || "";
           if (code === "storage/unauthorized" || code === "storage/permission-denied") {
-            return new Error(
-              kind === "video"
-                ? "Video blocked — Firebase Console → Storage → Rules: allow video under 25 MB, then Publish"
-                : "Upload blocked — check Firebase Storage rules"
-            );
+            return new Error("Upload blocked — check Firebase Storage rules");
           }
           if (code === "storage/canceled") return new Error("Upload canceled");
           if (error.message) return new Error(error.message);
           return new Error("Upload failed — check connection and try again");
         }
 
-        function prepareUploadPayload(blob, contentType, kind) {
-          if (kind !== "video") {
-            if (!blob.type || blob.type !== contentType) {
-              try {
-                return Promise.resolve(blob.slice(0, blob.size, contentType));
-              } catch (e) {
-                return Promise.resolve(blob);
-              }
+        function prepareUploadPayload(blob, contentType) {
+          if (!blob.type || blob.type !== contentType) {
+            try {
+              return Promise.resolve(blob.slice(0, blob.size, contentType));
+            } catch (e) {
+              return Promise.resolve(blob);
             }
-            return Promise.resolve(blob);
           }
-          setUploadProgress(true, 0, "Preparing video…");
-          return new Promise(function (resolve, reject) {
-            var reader = new FileReader();
-            reader.onload = function () {
-              resolve(new Blob([reader.result], { type: contentType }));
-            };
-            reader.onerror = function () {
-              reject(new Error("Could not read video — download it from OneDrive/iCloud first, then try again"));
-            };
-            reader.onabort = function () {
-              reject(new Error("Video read canceled"));
-            };
-            reader.readAsArrayBuffer(blob);
-          });
+          return Promise.resolve(blob);
         }
 
         function uploadMedia(blob, kind) {
           var contentType = uploadContentType(blob, kind);
-          var ext = uploadExtension(contentType, kind);
-          var progressLabel = kind === "video" ? "Uploading video…" : "Uploading file…";
-          var timeoutMs = kind === "video" ? 180000 : 60000;
+          var ext = uploadExtension(kind);
+          var progressLabel = kind === "gif" ? "Uploading file…" : "Uploading photo…";
 
-          return prepareUploadPayload(blob, contentType, kind).then(function (payload) {
+          return prepareUploadPayload(blob, contentType).then(function (payload) {
             var path = "july9-comments/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
             var ref = storage.ref(path);
             var uploadTask = ref.put(payload, { contentType: contentType });
@@ -3005,18 +2755,16 @@
                 settled = true;
                 try { uploadTaskRef.cancel(); } catch (e) { /* ignore */ }
                 setUploadProgress(false, 0);
-                reject(new Error("Upload timed out — try a smaller video or check your connection"));
-              }, timeoutMs);
+                reject(new Error("Upload timed out — try a smaller photo or check your connection"));
+              }, 60000);
               var stallId = setTimeout(function () {
                 if (settled || lastPct > 0) return;
                 settled = true;
                 clearTimeout(timeoutId);
                 try { uploadTaskRef.cancel(); } catch (e) { /* ignore */ }
                 setUploadProgress(false, 0);
-                reject(new Error(
-                  "Upload stuck at 0% — publish Storage rules in Firebase Console (25 MB + video types) or check network"
-                ));
-              }, kind === "video" ? 25000 : 15000);
+                reject(new Error("Upload stuck — check Firebase Storage rules or your connection"));
+              }, 15000);
 
               function finish(err, url) {
                 if (settled) return;
@@ -3047,7 +2795,7 @@
                   }
                 },
                 function (error) {
-                  finish(formatStorageError(error, kind));
+                  finish(formatStorageError(error));
                 }
               );
 
@@ -3057,7 +2805,7 @@
                 setUploadProgress(true, 100, "Upload complete");
                 finish(null, url);
               }).catch(function (error) {
-                finish(formatStorageError(error, kind));
+                finish(formatStorageError(error));
               });
             });
           });
@@ -3070,8 +2818,6 @@
             var file = fileEl.files && fileEl.files[0];
             if (!file) return;
             if (gifUrlEl) gifUrlEl.value = "";
-            if (videoEl) videoEl.value = "";
-            clearVideoUrlField();
             if (selectedGifBtn) {
               selectedGifBtn.classList.remove("is-selected");
               selectedGifBtn = null;
@@ -3087,62 +2833,6 @@
               fileEl.value = "";
               showToast(err.message || "Could not attach file");
             });
-          });
-        }
-
-        if (videoEl) {
-          videoEl.addEventListener("change", function () {
-            onVideoFileSelected(videoEl.files && videoEl.files[0]);
-          });
-        }
-
-        if (videoUrlEl) {
-          videoUrlEl.addEventListener("change", function () {
-            var value = videoUrlEl.value.trim();
-            if (!value) {
-              if (pendingMedia && pendingMedia.type === "url" && pendingMedia.kind === "video") clearPreview();
-              return;
-            }
-            if (!isAllowedVideoUrl(value)) {
-              showToast("Paste a direct https link to MP4, MOV, or WebM");
-              videoUrlEl.value = "";
-              return;
-            }
-            if (fileEl) fileEl.value = "";
-            if (videoEl) videoEl.value = "";
-            if (gifUrlEl) gifUrlEl.value = "";
-            if (selectedGifBtn) {
-              selectedGifBtn.classList.remove("is-selected");
-              selectedGifBtn = null;
-            }
-            if (gifPickerPanel) gifPickerPanel.classList.remove("is-visible");
-            setPreview({
-              type: "url",
-              src: value,
-              kind: "video"
-            });
-            showToast("Video link attached — tap Post");
-          });
-        }
-
-        if (videoDropEl) {
-          ["dragenter", "dragover"].forEach(function (eventName) {
-            videoDropEl.addEventListener(eventName, function (event) {
-              event.preventDefault();
-              event.stopPropagation();
-              videoDropEl.classList.add("is-dragover");
-            });
-          });
-          ["dragleave", "drop"].forEach(function (eventName) {
-            videoDropEl.addEventListener(eventName, function (event) {
-              event.preventDefault();
-              event.stopPropagation();
-              videoDropEl.classList.remove("is-dragover");
-            });
-          });
-          videoDropEl.addEventListener("drop", function (event) {
-            var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
-            onVideoFileSelected(file);
           });
         }
 
@@ -3218,9 +2908,7 @@
           }).catch(function (err) {
             var msg = err && err.message ? err.message : "Could not post — check Firebase rules";
             if (err && err.code === "permission-denied") {
-              msg = pendingMedia && pendingMedia.kind === "video"
-                ? "Video blocked — update Storage rules in Firebase"
-                : "Post blocked — check Firestore rules";
+              msg = "Post blocked — check Firestore rules";
             }
             showToast(msg);
           }).finally(function () {
